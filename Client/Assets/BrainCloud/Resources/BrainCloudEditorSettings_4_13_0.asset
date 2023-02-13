@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1114955303, guid: 8e0eb973d9bd4984388f55f0e2a45263, type: 3}
+  m_Name: BrainCloudEditorSettings_4_13_0
+  m_EditorClassIdentifier: 
+  AdminEmail:
+    _encodedValue: 1ba199c1c991023b6b0b4b63711b7b6b
+  AdminId:
+    _encodedValue: a9918981
+  AdminToken:
+    _encodedValue: 3391c133c11b13a969c91b1b8969a1b92b0b690bc10b23690b13a12b2ba181c1c9c1b1c1
+  TeamId:
+    _encodedValue: 912b89a92b892ba1690b9133c969a12b0bc9690bc933b96999c9b1a1812bb1a991c90b1b
