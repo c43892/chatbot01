@@ -22,7 +22,7 @@ public class ChatGPTWrapper : MonoBehaviour
 
     readonly List<string> converstaionHistory = new();
 
-    public Text OutputField;
+    public InputField OutputField;
     public InputField InputField;
     public ScrollRect ScollRect;
 
@@ -48,7 +48,8 @@ public class ChatGPTWrapper : MonoBehaviour
 
     public void OnSubmit()
     {
-        OutputField.text += "<color=\"yellow\">" + InputField.text + "</color>\n\n";
+        // OutputField.text += "<color=\"yellow\">" + InputField.text + "</color>\n\n";
+        OutputField.text += InputField.text + "\n\n";
 
         var inputPrompt = InputField.text;
         InputField.text = null;
@@ -57,12 +58,14 @@ public class ChatGPTWrapper : MonoBehaviour
         RequestCompletion(ContactConversationHistory(), response =>
         {
             response = response.Trim("\r\n ".ToCharArray());
-            OutputField.text += "<color=\"lightblue\">" + response + "</color>\n\n";
+            // OutputField.text += "<color=\"lightblue\">" + response + "</color>\n\n";
+            OutputField.text += response + "\n\n";
             converstaionHistory.Add(response);
             ScollRect.verticalNormalizedPosition = 0;
         }, error =>
         {
-            OutputField.text += "<color=\"red\">" + error + "</color>\n\n";
+            // OutputField.text += "<color=\"red\">" + error + "</color>\n\n";
+            OutputField.text += error + "\n\n";
             ScollRect.verticalNormalizedPosition = 0;
         });
 
