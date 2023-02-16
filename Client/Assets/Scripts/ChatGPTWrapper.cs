@@ -1,5 +1,6 @@
 ﻿using BrainCloud;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ public class ChatGPTWrapper : MonoBehaviour
 
     private string GOOGLE_API_KEY = "AIzaSyD8sHeh_dcU8OYFo3NcUKVaFQk1ylIko8Q";
     private string GOOGLE_TEXT_TO_SPEECH_API = "https://texttospeech.googleapis.com/v1/text:synthesize";
+    private string GOOGLE_SPEECH_TO_TEXT_API = "https://speech.googleapis.com/v1/speech:recognize";
 
 
     readonly List<string> converstaionHistory = new();
@@ -58,7 +60,14 @@ public class ChatGPTWrapper : MonoBehaviour
 
         var inputPrompt = InputField.text;
         InputField.text = null;
+        InputField.Select();
+        InputField.ActivateInputField();
 
+        Ask(inputPrompt);
+    }
+
+    void Ask(string inputPrompt)
+    {
         converstaionHistory.Add(inputPrompt);
         RequestCompletion(ContactConversationHistory(), response =>
         {
@@ -75,9 +84,6 @@ public class ChatGPTWrapper : MonoBehaviour
             OutputField.text += error + "\n\n";
             ScollRect.verticalNormalizedPosition = 0;
         });
-
-        InputField.Select();
-        InputField.ActivateInputField();
     }
 
     string ContactConversationHistory()
@@ -150,7 +156,7 @@ public class ChatGPTWrapper : MonoBehaviour
             if (www.result != UnityWebRequest.Result.ConnectionError && www.result != UnityWebRequest.Result.ProtocolError)
             {
                 var responseJson = www.downloadHandler.text;
-                var responseObj = JsonConvert.DeserializeObject<Response>(responseJson);
+                var responseObj = JsonConvert.DeserializeObject<ChatGPTResponse>(responseJson);
                 var response = responseObj.choices[0]["text"];
                 onResponse?.Invoke(response.Trim(' ', '\r', '\n'));
             }
@@ -169,8 +175,8 @@ public class ChatGPTWrapper : MonoBehaviour
     IEnumerator Text2Speech(string text)
     {
         // string json = "{\"input\":{\"text\":\"" + text + "\"},\"voice\":{\"languageCode\":\"cmn-TW\",\"name\":\"cmn-TW-Wavenet-A\",\"ssmlGender\":\"FEMALE\"},\"audioConfig\":{\"audioEncoding\":\"LINEAR16\",\"sampleRateHertz\":16000}}";
-        string json = "{\"input\":{\"text\":\"" + text + "\"},\"voice\":{\"languageCode\":\"en-us\",\"name\":\"en-US-Neural2-G\",\"ssmlGender\":\"FEMALE\"},\"audioConfig\":{\"audioEncoding\":\"LINEAR16\",\"sampleRateHertz\":16000}}";
-
+        // string json = "{\"input\":{\"text\":\"" + text + "\"},\"voice\":{\"languageCode\":\"en-us\",\"name\":\"en-US-Neural2-G\",\"ssmlGender\":\"FEMALE\"},\"audioConfig\":{\"audioEncoding\":\"LINEAR16\",\"sampleRateHertz\":16000}}";
+        string json = "{\"input\":{\"text\":\"" + text + "\"},\"voice\":{\"languageCode\":\"cmn-CN\",\"name\":\"cmn-CN-Wavenet-A\",\"ssmlGender\":\"FEMALE\"},\"audioConfig\":{\"audioEncoding\":\"LINEAR16\",\"sampleRateHertz\":16000}}";
         // Create a Unity web request
         using (UnityWebRequest www = UnityWebRequest.Post("https://texttospeech.googleapis.com/v1/text:synthesize?key=AIzaSyD8sHeh_dcU8OYFo3NcUKVaFQk1ylIko8Q", ""))
         {
@@ -211,14 +217,99 @@ public class ChatGPTWrapper : MonoBehaviour
         }
     }
 
+    IEnumerator Speech2Text(AudioClip clip, Action<string> onResult, Action<string> onError)
+    {
+        var samples = new float[clip.samples];
+        clip.GetData(samples, 0);
+        short[] intData = new short[samples.Length];
+        byte[] byteData = new byte[samples.Length * 2];
+        float rescaleFactor = 32768.0f;
+        for (int i = 0; i < samples.Length; i++)
+        {
+            intData[i] = (short)(samples[i] * rescaleFactor);
+            byte[] byteArr = new byte[2];
+            byteArr = BitConverter.GetBytes(intData[i]);
+            byteArr.CopyTo(byteData, i * 2);
+        }
+
+        // byteData = System.IO.File.ReadAllBytes(@"C:\Users\Ming\Downloads\a.wav");
+
+        // string json = "{\"config\": {\"encoding\":\"LINEAR16\",\"languageCode\":\"en-us\",\"enableAutomaticPunctuation\":true,\"audioChannelCount\":" + clip.channels + ",\"sampleRateHertz\":16000},\"audio\": {\"content\": \"" + System.Convert.ToBase64String(byteData) + "\"}}";
+        // string json = "{\"config\": {\"encoding\":\"LINEAR16\",\"languageCode\":\"cmn-TW\",\"enableAutomaticPunctuation\":true,\"audioChannelCount\":" + clip.channels + ",\"sampleRateHertz\":16000},\"audio\": {\"content\": \"" + System.Convert.ToBase64String(byteData) + "\"}}";
+        string json = "{\"config\": {\"encoding\":\"LINEAR16\",\"languageCode\":\"cmn-CN\",\"enableAutomaticPunctuation\":true,\"audioChannelCount\":" + clip.channels + ",\"sampleRateHertz\":16000},\"audio\": {\"content\": \"" + System.Convert.ToBase64String(byteData) + "\"}}";
+
+        using (UnityWebRequest www = UnityWebRequest.Post("https://speech.googleapis.com/v1/speech:recognize?key=AIzaSyD8sHeh_dcU8OYFo3NcUKVaFQk1ylIko8Q", ""))
+        {
+            www.SetRequestHeader("Content-Type", "application/json");
+
+            byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
+            www.uploadHandler = new UploadHandlerRaw(jsonToSend);
+            www.downloadHandler = new DownloadHandlerBuffer();
+
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.ConnectionError && www.result != UnityWebRequest.Result.ProtocolError)
+            {
+                var responseObj = JsonConvert.DeserializeObject<GoogleSpeech2TextResponse>(www.downloadHandler.text);
+                var transcript = responseObj.results[0].alternatives[0].transcript;
+                onResult?.Invoke(transcript.Trim(' ', '\r', '\n'));
+            }
+            else
+            {
+                onError?.Invoke(www.error);
+            }
+        }
+    }
+
+    AudioClip recordingClip;
+
+    public void StartRecording()
+    {
+        string microphoneName = Microphone.devices[0];
+        recordingClip = Microphone.Start(microphoneName, true, 5, 16000);
+    }
+
+    public void StopRecording()
+    {
+        string microphoneName = Microphone.devices[0];
+        Microphone.End(microphoneName);
+
+        StartCoroutine(Speech2Text(recordingClip, transcript =>
+        {
+            OutputField.text += transcript + "\n\n";
+
+            Ask(transcript);
+        }, error =>
+        {
+            OutputField.text += error + "\n\n";
+            ScollRect.verticalNormalizedPosition = 0;
+        }));
+    }
+
     private void Update()
     {
         if ((Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter)) && InputField.text != null && InputField.text.Trim() != "")
             OnSubmit();
     }
 
-    class Response
+    class ChatGPTResponse
     {
         public Dictionary<string, string>[] choices;
+    }
+
+    class GoogleSpeech2TextResponse
+    {
+        public GoogleSpeech2TextResponseResult[] results;
+    }
+
+    class GoogleSpeech2TextResponseResult
+    {
+        public GoogleSpeech2TextResponseResultAlternative[] alternatives;
+    }
+
+    class GoogleSpeech2TextResponseResultAlternative
+    {
+        public string transcript;
+        public float confidence;
     }
 }
