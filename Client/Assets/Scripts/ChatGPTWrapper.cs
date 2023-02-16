@@ -1,4 +1,4 @@
-using BrainCloud;
+﻿using BrainCloud;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -15,16 +15,21 @@ using UnityEngine.UI;
 public class ChatGPTWrapper : MonoBehaviour
 {
     const string END_POINT = "https://api.openai.com/v1/completions";
-    const string API_KEY = "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";
+    const string OPENAI_API_KEY = "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";
     const string MODEL = "text-davinci-003";
     const int MAX_PAYLOAD = 2048;
     const int BAD_REQUEST = 400;
+
+    private string GOOGLE_API_KEY = "AIzaSyD8sHeh_dcU8OYFo3NcUKVaFQk1ylIko8Q";
+    private string GOOGLE_TEXT_TO_SPEECH_API = "https://texttospeech.googleapis.com/v1/text:synthesize";
+
 
     readonly List<string> converstaionHistory = new();
 
     public InputField OutputField;
     public InputField InputField;
     public ScrollRect ScollRect;
+    public AudioSource MainAudioSource;
 
     const string BRAIN_CLOUD_SERVICE_URL = "https://portal.braincloudservers.com";
     const string BRAIN_CLOUD_APP_ID = "14407";
@@ -62,6 +67,8 @@ public class ChatGPTWrapper : MonoBehaviour
             OutputField.text += response + "\n\n";
             converstaionHistory.Add(response);
             ScollRect.verticalNormalizedPosition = 0;
+
+            StartCoroutine(Text2Speech(response));
         }, error =>
         {
             // OutputField.text += "<color=\"red\">" + error + "</color>\n\n";
@@ -131,7 +138,7 @@ public class ChatGPTWrapper : MonoBehaviour
         using (UnityWebRequest www = UnityWebRequest.Post(END_POINT, ""))
         {
             www.SetRequestHeader("Content-Type", "application/json");
-            www.SetRequestHeader("Authorization", $"Bearer {API_KEY}");
+            www.SetRequestHeader("Authorization", $"Bearer {OPENAI_API_KEY}");
 
             string json = "{\"prompt\":\"" + prompt + "\", \"max_tokens\":" + MAX_PAYLOAD + ", \"temperature\":0, \"model\":\"" + MODEL + "\"}";
             byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
@@ -156,6 +163,51 @@ public class ChatGPTWrapper : MonoBehaviour
             }
             else
                 onError?.Invoke("[ChatBot Error: " + www.error + "]");
+        }
+    }
+
+    IEnumerator Text2Speech(string text)
+    {
+        // string json = "{\"input\":{\"text\":\"" + text + "\"},\"voice\":{\"languageCode\":\"cmn-TW\",\"name\":\"cmn-TW-Wavenet-A\",\"ssmlGender\":\"FEMALE\"},\"audioConfig\":{\"audioEncoding\":\"LINEAR16\",\"sampleRateHertz\":16000}}";
+        string json = "{\"input\":{\"text\":\"" + text + "\"},\"voice\":{\"languageCode\":\"en-us\",\"name\":\"en-US-Neural2-G\",\"ssmlGender\":\"FEMALE\"},\"audioConfig\":{\"audioEncoding\":\"LINEAR16\",\"sampleRateHertz\":16000}}";
+
+        // Create a Unity web request
+        using (UnityWebRequest www = UnityWebRequest.Post("https://texttospeech.googleapis.com/v1/text:synthesize?key=AIzaSyD8sHeh_dcU8OYFo3NcUKVaFQk1ylIko8Q", ""))
+        {
+            www.SetRequestHeader("Content-Type", "application/json");
+
+            byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
+            www.uploadHandler = new UploadHandlerRaw(jsonToSend);
+            www.downloadHandler = new DownloadHandlerBuffer();
+
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.ConnectionError && www.result != UnityWebRequest.Result.ProtocolError)
+            {
+                var response = JsonConvert.DeserializeObject<Dictionary<string, string>>(www.downloadHandler.text);
+                byte[] audioBytes = Convert.FromBase64String(response["audioContent"]);
+
+                int headerSize = 44; // Standard WAV header is 44 bytes
+                int subchunk1Size = BitConverter.ToInt32(audioBytes, 16);
+                int subchunk2Size = BitConverter.ToInt32(audioBytes, 40);
+                int dataSize = subchunk2Size;
+
+                // Get the audio data from the WAV file
+                float[] audioData = new float[dataSize / 2];
+                for (int i = headerSize; i < headerSize + dataSize; i += 2)
+                {
+                    audioData[(i - headerSize) / 2] = (short)((audioBytes[i + 1] << 8) | audioBytes[i]) / 32768.0f;
+                }
+
+                var clip = AudioClip.Create("AudioClip", audioBytes.Length / 2, 1, 16000, false);
+                clip.SetData(audioData, 0);
+                MainAudioSource.clip = clip;
+                MainAudioSource.Play();
+            }
+            else
+            {
+                Debug.Log(www.error);
+            }
         }
     }
 
