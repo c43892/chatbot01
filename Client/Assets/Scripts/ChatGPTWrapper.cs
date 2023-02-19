@@ -85,7 +85,16 @@ public class ChatGPTWrapper : MonoBehaviour
             converstaionHistory.Add(question);
             ScollRect.verticalNormalizedPosition = 0;
 
-            sp.GetChatBotService(2048).Ask(question, answer =>
+            var prompt = "";
+            foreach (var t in converstaionHistory)
+            {
+                if (prompt.Length + t.Length < 2048)
+                    prompt += " " + t;
+                else
+                    break;
+            }
+
+            sp.GetChatBotService(2048).Ask(prompt, answer =>
             {
                 ConversationOutput.text += "<color=yellow>" + answer + "</color>\n\n";
                 converstaionHistory.Add(answer);
