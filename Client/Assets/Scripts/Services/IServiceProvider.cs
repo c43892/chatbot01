@@ -9,11 +9,9 @@ namespace Assets.Scripts.Services
 {
     public interface IServiceProvider
     {
-        LanguageInfo LangInfo { get; set; }
+        IText2SpeechService GetText2SpeechService(string languageCode, string languageModel, int sampleRate);
 
-        IText2SpeechService GetText2SpeechService(int sampleRate);
-
-        ISpeech2TextService GetSpeech2TextService();
+        ISpeech2TextService GetSpeech2TextService(string languageCode);
 
         IChatBotService GetChatBotService(int maxPayload);    
     }

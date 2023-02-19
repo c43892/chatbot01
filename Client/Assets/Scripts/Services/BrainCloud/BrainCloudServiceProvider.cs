@@ -7,30 +7,13 @@ namespace Assets.Scripts.Services.BrainCloud
     public class BrainCloudServiceProvider : IServiceProvider
     {
         BrainCloudWrapper bcw;
-        Text2SpeechService text2SpeechService = null;
-        Speech2TextService speech2TextService = null;
-        ChatBotService chatBotService = null;
+        readonly Dictionary<string, IText2SpeechService> text2SpeechServices = new Dictionary<string, IText2SpeechService>();
+        readonly Dictionary<string, ISpeech2TextService> speech2TextServices = new Dictionary<string, ISpeech2TextService>();
+        readonly Dictionary<string, IChatBotService> chatBotServices = new Dictionary<string, IChatBotService>();
 
-        public LanguageInfo LangInfo
-        {
-            get => langInfo;
-            set
-            {
-                if (langInfo == value)
-                    return;
-
-                langInfo = value;
-                text2SpeechService = null;
-                speech2TextService = null;
-                chatBotService = null;
-            }
-        }
-        LanguageInfo langInfo;
-
-        public void Init(BrainCloudWrapper wrapper, LanguageInfo langInfo, Action onResponse, Action<int, int> onError)
+        public void Init(BrainCloudWrapper wrapper, Action onResponse, Action<int, int> onError)
         {
             bcw = wrapper;
-            LangInfo = langInfo;
 
             bcw.Init();
             bcw.Client.SetPacketTimeouts(new List<int>() { 60, 60, 60 });
@@ -44,28 +27,29 @@ namespace Assets.Scripts.Services.BrainCloud
             });
         }
 
-        public IText2SpeechService GetText2SpeechService(int sampleRate)
+        public IText2SpeechService GetText2SpeechService(string languageCode, string languageModel, int sampleRate)
         {
-            if (text2SpeechService == null)
-                text2SpeechService = new Text2SpeechService(bcw, LangInfo.Code, LangInfo.Model, sampleRate);
+            var key = languageCode + ":" + languageModel;
+            if (!text2SpeechServices.ContainsKey(key))
+                text2SpeechServices[key] = new Text2SpeechService(bcw, languageCode, languageModel, sampleRate);
 
-            return text2SpeechService;
+            return text2SpeechServices[key];
         }
 
-        public ISpeech2TextService GetSpeech2TextService()
+        public ISpeech2TextService GetSpeech2TextService(string languageCode)
         {
-            if (speech2TextService == null)
-                speech2TextService = new Speech2TextService(bcw, LangInfo.Code);
+            if (!speech2TextServices.ContainsKey(languageCode))
+                speech2TextServices[languageCode] = new Speech2TextService(bcw, languageCode);
 
-            return speech2TextService;
+            return speech2TextServices[languageCode];
         }
 
         public IChatBotService GetChatBotService(int maxPayload)
         {
-            if (chatBotService == null)
-                chatBotService = new ChatBotService(bcw, maxPayload);
+            if (!chatBotServices.ContainsKey(maxPayload.ToString()))
+                chatBotServices[maxPayload.ToString()] = new ChatBotService(bcw, maxPayload);
 
-            return chatBotService;
+            return chatBotServices[maxPayload.ToString()];
         }
     }
 }

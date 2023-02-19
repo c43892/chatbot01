@@ -29,12 +29,13 @@ public class ChatGPTWrapper : MonoBehaviour
 
     private IServiceProvider sp = null;
     private LanguageManager langMgr = null;
+    private string curLang = null;
 
     public int AudioDeviceIndex = 0;
 
     public void Start()
     {
-        langMgr = new LanguageManager("fr", new()
+        langMgr = new LanguageManager("cn", new()
         {
             { "en", new() { Code = "en-US", Model = "en-US-Neural2-G" } },
             { "cn", new() { Code = "cmn_CN", Model = "cmn-CN-Standard-D" } },
@@ -42,7 +43,7 @@ public class ChatGPTWrapper : MonoBehaviour
         });
 
         var bcsp = new BrainCloudServiceProvider();
-        bcsp.Init(gameObject.AddComponent<BrainCloudWrapper>(), langMgr.DefaultLanguageInfo, () =>
+        bcsp.Init(gameObject.AddComponent<BrainCloudWrapper>(), () =>
         {
             sp = bcsp;
             Debug.Log("BrainCLoud init ok");
@@ -52,13 +53,14 @@ public class ChatGPTWrapper : MonoBehaviour
         });
 
         LangSel.SetLanguage(langMgr.DefaultLangauge);
+        curLang = langMgr.DefaultLangauge;
     }
 
     AudioClip recordingClip;
     public void StartRecording()
     {
         string microphoneName = Microphone.devices[AudioDeviceIndex];
-        recordingClip = Microphone.Start(microphoneName, true, 5, 16000);
+        recordingClip = Microphone.Start(microphoneName, true, 10, 16000);
     }
 
     public void StopRecording()
@@ -76,7 +78,8 @@ public class ChatGPTWrapper : MonoBehaviour
             ScollRect.verticalNormalizedPosition = 0;
         }
 
-        sp.GetSpeech2TextService().Speech2Text(audioData, recordingClip.frequency, recordingClip.channels, (question, langCode, confidence) =>
+        var langQestion = langMgr[curLang];
+        sp.GetSpeech2TextService(langQestion.Code).Speech2Text(audioData, recordingClip.frequency, recordingClip.channels, (question, langCode, confidence) =>
         {
             ConversationOutput.text += question + "\n";
             converstaionHistory.Add(question);
@@ -88,7 +91,9 @@ public class ChatGPTWrapper : MonoBehaviour
                 converstaionHistory.Add(answer);
                 ScollRect.verticalNormalizedPosition = 0;
 
-                sp.GetText2SpeechService(16000).Text2Speech(answer, audioData =>
+                var langCodeAnswer = (new LanguageDetector()).DetectLanguage(answer);
+                var langAnswer = langMgr[langCodeAnswer];
+                sp.GetText2SpeechService(langAnswer.Code, langAnswer.Model, 16000).Text2Speech(answer, audioData =>
                 {
                     clipData = AudioTool.WavData2ClipData(audioData);
                     var clip = AudioClip.Create("AnswerClip", audioData.Length / 2, 1, 16000, false);
@@ -102,6 +107,6 @@ public class ChatGPTWrapper : MonoBehaviour
 
     public void OnLanguageChanged(string lang)
     {
-        sp.LangInfo = langMgr[lang];
+        curLang = lang;
     }
 }
