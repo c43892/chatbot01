@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts;
+using Assets.Scripts.Languages;
 using Assets.Scripts.Services;
 using Assets.Scripts.Services.BrainCloud;
 using BrainCloud;
@@ -15,51 +16,42 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Networking;
 using UnityEngine.UI;
+using IServiceProvider = Assets.Scripts.Services.IServiceProvider;
 
 public class ChatGPTWrapper : MonoBehaviour
 {
-    const string END_POINT = "https://api.openai.com/v1/completions";
-    const string OPENAI_API_KEY = "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";
-    const string MODEL = "text-davinci-003";
-    const int MAX_PAYLOAD = 2048;
-    const int BAD_REQUEST = 400;
-
-    private string GOOGLE_API_KEY = "AIzaSyD8sHeh_dcU8OYFo3NcUKVaFQk1ylIko8Q";
-    private string GOOGLE_TEXT_TO_SPEECH_API = "https://texttospeech.googleapis.com/v1/text:synthesize";
-    private string GOOGLE_SPEECH_TO_TEXT_API = "https://speech.googleapis.com/v1/speech:recognize";
-
-
     readonly List<string> converstaionHistory = new();
 
-    public InputField OutputField;
-    public InputField InputField;
+    public Text ConversationOutput;
     public ScrollRect ScollRect;
     public AudioSource MainAudioSource;
+    public LangaugeSelection LangSel;
 
-    const string BRAIN_CLOUD_SERVICE_URL = "https://portal.braincloudservers.com";
-    const string BRAIN_CLOUD_APP_ID = "14407";
-    const string BRAIN_CLOUD_APP_SECRET = "84b17cdb-c2b1-4304-b401-6b1d7d4e4165";
-
-    private BrainCloudServiceProvider BCP = new BrainCloudServiceProvider();
-    private IText2SpeechService text2SpeechService;
-    private ISpeech2TextService speech2TextService;
-    private IChatBotService chatBotService;
+    private IServiceProvider sp = null;
+    private LanguageManager langMgr = null;
 
     public int AudioDeviceIndex = 0;
 
     public void Start()
     {
-        // BCP.Init(gameObject.AddComponent<BrainCloudWrapper>(), "en-us", "en-US-Neural2-G", () =>
-        BCP.Init(gameObject.AddComponent<BrainCloudWrapper>(), "cmn-CN", "cmn-CN-Wavenet-A", () =>
+        langMgr = new LanguageManager("fr", new()
         {
-            text2SpeechService = BCP.GetText2SpeechService(16000);
-            speech2TextService = BCP.GetSpeech2TextService();
-            chatBotService = BCP.GetChatBotService(MAX_PAYLOAD);
+            { "en", new() { Code = "en-US", Model = "en-US-Neural2-G" } },
+            { "cn", new() { Code = "cmn_CN", Model = "cmn-CN-Standard-D" } },
+            { "fr", new() { Code = "fr-FR", Model = "fr-FR-Neural2-A" } }
+        });
+
+        var bcsp = new BrainCloudServiceProvider();
+        bcsp.Init(gameObject.AddComponent<BrainCloudWrapper>(), langMgr.DefaultLanguageInfo, () =>
+        {
+            sp = bcsp;
             Debug.Log("BrainCLoud init ok");
         }, (status, errorCode) =>
         {
             Debug.LogError("BrainCloud init failed: " + status + ":" + errorCode);
         });
+
+        LangSel.SetLanguage(langMgr.DefaultLangauge);
     }
 
     AudioClip recordingClip;
@@ -76,35 +68,40 @@ public class ChatGPTWrapper : MonoBehaviour
 
         float[] clipData = new float[recordingClip.samples];
         recordingClip.GetData(clipData, 0);
-        var audioData = AudioTool.ClipData2AudioData(clipData);
+        var audioData = AudioTool.ClipData2WavData(clipData);
 
         void onError(string error)
         {
-            OutputField.text += error + "\n";
+            ConversationOutput.text += error + "\n";
             ScollRect.verticalNormalizedPosition = 0;
         }
 
-        speech2TextService.Speech2Text(audioData, recordingClip.frequency, recordingClip.channels, (question, langCode, confidence) =>
+        sp.GetSpeech2TextService().Speech2Text(audioData, recordingClip.frequency, recordingClip.channels, (question, langCode, confidence) =>
         {
-            OutputField.text += question + "\n";
+            ConversationOutput.text += question + "\n";
             converstaionHistory.Add(question);
             ScollRect.verticalNormalizedPosition = 0;
 
-            chatBotService.Ask(question, answer =>
+            sp.GetChatBotService(2048).Ask(question, answer =>
             {
-                OutputField.text += answer + "\n";
+                ConversationOutput.text += "<color=yellow>" + answer + "</color>\n\n";
                 converstaionHistory.Add(answer);
                 ScollRect.verticalNormalizedPosition = 0;
 
-                text2SpeechService.Text2Speech(answer, audioData =>
+                sp.GetText2SpeechService(16000).Text2Speech(answer, audioData =>
                 {
-                    clipData = AudioTool.AudioData2ClipData(audioData);
-                    var clip = AudioClip.Create("AnswerClip", audioData.Length / 2, 1, text2SpeechService.SampleRate, false);
+                    clipData = AudioTool.WavData2ClipData(audioData);
+                    var clip = AudioClip.Create("AnswerClip", audioData.Length / 2, 1, 16000, false);
                     clip.SetData(clipData, 0);
                     MainAudioSource.clip = clip;
                     MainAudioSource.Play();
                 }, onError);
             }, onError);
         }, onError);
+    }
+
+    public void OnLanguageChanged(string lang)
+    {
+        sp.LangInfo = langMgr[lang];
     }
 }

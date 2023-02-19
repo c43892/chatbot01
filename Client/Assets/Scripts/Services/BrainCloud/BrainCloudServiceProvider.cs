@@ -1,24 +1,36 @@
-﻿using BrainCloud;
-using Newtonsoft.Json;
+﻿using Assets.Scripts.Languages;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Assets.Scripts.Services.BrainCloud
 {
-    public class BrainCloudServiceProvider
+    public class BrainCloudServiceProvider : IServiceProvider
     {
         BrainCloudWrapper bcw;
-        string languageCode;
-        string languageModel;
+        Text2SpeechService text2SpeechService = null;
+        Speech2TextService speech2TextService = null;
+        ChatBotService chatBotService = null;
 
-        public void Init(BrainCloudWrapper wrapper, string langCode, string langModel, Action onResponse, Action<int, int> onError)
+        public LanguageInfo LangInfo
+        {
+            get => langInfo;
+            set
+            {
+                if (langInfo == value)
+                    return;
+
+                langInfo = value;
+                text2SpeechService = null;
+                speech2TextService = null;
+                chatBotService = null;
+            }
+        }
+        LanguageInfo langInfo;
+
+        public void Init(BrainCloudWrapper wrapper, LanguageInfo langInfo, Action onResponse, Action<int, int> onError)
         {
             bcw = wrapper;
-            languageCode = langCode;
-            languageModel = langModel;
+            LangInfo = langInfo;
 
             bcw.Init();
             bcw.Client.SetPacketTimeouts(new List<int>() { 60, 60, 60 });
@@ -34,17 +46,26 @@ namespace Assets.Scripts.Services.BrainCloud
 
         public IText2SpeechService GetText2SpeechService(int sampleRate)
         {
-            return new Text2SpeechService(bcw, languageCode, languageModel, sampleRate);
+            if (text2SpeechService == null)
+                text2SpeechService = new Text2SpeechService(bcw, LangInfo.Code, LangInfo.Model, sampleRate);
+
+            return text2SpeechService;
         }
 
         public ISpeech2TextService GetSpeech2TextService()
         {
-            return new Speech2TextService(bcw, languageCode);
+            if (speech2TextService == null)
+                speech2TextService = new Speech2TextService(bcw, LangInfo.Code);
+
+            return speech2TextService;
         }
 
         public IChatBotService GetChatBotService(int maxPayload)
         {
-            return new ChatBotService(bcw, maxPayload);
+            if (chatBotService == null)
+                chatBotService = new ChatBotService(bcw, maxPayload);
+
+            return chatBotService;
         }
     }
 }

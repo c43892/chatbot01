@@ -10,6 +10,6 @@ namespace Assets.Scripts.Services
     {
         int SampleRate { get; }
 
-        public void Text2Speech(string text, Action<byte[]> onResponse, Action<string> onError);
+        void Text2Speech(string text, Action<byte[]> onResponse, Action<string> onError);
     }
 }
