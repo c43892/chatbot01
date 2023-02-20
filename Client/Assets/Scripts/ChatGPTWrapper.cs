@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -20,7 +21,7 @@ using IServiceProvider = Assets.Scripts.Services.IServiceProvider;
 
 public class ChatGPTWrapper : MonoBehaviour
 {
-    readonly List<string> converstaionHistory = new();
+    readonly List<KeyValuePair<string, string>> converstaionHistory = new();
 
     public Text ConversationOutput;
     public ScrollRect ScollRect;
@@ -37,8 +38,8 @@ public class ChatGPTWrapper : MonoBehaviour
     {
         langMgr = new LanguageManager("cn", new()
         {
-            { "en", new() { Code = "en-US", Model = "en-US-Neural2-G" } },
             { "cn", new() { Code = "cmn_CN", Model = "cmn-CN-Standard-D" } },
+            { "en", new() { Code = "en-US", Model = "en-US-Neural2-G" } },
             { "fr", new() { Code = "fr-FR", Model = "fr-FR-Neural2-A" } }
         });
 
@@ -82,14 +83,16 @@ public class ChatGPTWrapper : MonoBehaviour
         sp.GetSpeech2TextService(langQestion.Code).Speech2Text(audioData, recordingClip.frequency, recordingClip.channels, (question, langCode, confidence) =>
         {
             ConversationOutput.text += question + "\n";
-            converstaionHistory.Add(question);
+            converstaionHistory.Add(new("question", question));
             ScollRect.verticalNormalizedPosition = 0;
 
+            // assembe the conversition history
             var prompt = "";
-            foreach (var t in converstaionHistory)
+            for (var i = converstaionHistory.Count - 1; i >= 0; i--)
             {
-                if (prompt.Length + t.Length < 2048)
-                    prompt += " " + t;
+                var newLine = converstaionHistory[i].Value;
+                if (prompt.Length + newLine.Length < 2048)
+                    prompt = newLine + "\n" + prompt;
                 else
                     break;
             }
@@ -97,7 +100,7 @@ public class ChatGPTWrapper : MonoBehaviour
             sp.GetChatBotService(2048).Ask(prompt, answer =>
             {
                 ConversationOutput.text += "<color=yellow>" + answer + "</color>\n\n";
-                converstaionHistory.Add(answer);
+                converstaionHistory.Add(new("answer:", answer));
                 ScollRect.verticalNormalizedPosition = 0;
 
                 var langCodeAnswer = (new LanguageDetector()).DetectLanguage(answer);

@@ -9,7 +9,8 @@ namespace Assets.Scripts.Services.BrainCloud
 {
     class ChatBotService : BrainCloudServiceService, IChatBotService
     {
-        int maxPayload = 1024;
+        int maxPayload = 2048;
+
 
         internal ChatBotService(BrainCloudWrapper wrapper, int payload) : base(wrapper)
         {
