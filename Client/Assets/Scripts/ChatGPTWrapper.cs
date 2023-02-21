@@ -32,7 +32,9 @@ public class ChatGPTWrapper : MonoBehaviour
     private LanguageManager langMgr = null;
     private string curLang = null;
 
+    public RecordingButton RecordingBtn = null;
     public int AudioDeviceIndex = 0;
+    public int MaxRecordingTime = 10;
 
     public void Start()
     {
@@ -61,15 +63,17 @@ public class ChatGPTWrapper : MonoBehaviour
     public void StartRecording()
     {
         string microphoneName = Microphone.devices[AudioDeviceIndex];
-        recordingClip = Microphone.Start(microphoneName, true, 10, 16000);
+        recordingClip = Microphone.Start(microphoneName, true, MaxRecordingTime, 16000);
+        RecordingBtn.StartRecording(MaxRecordingTime);
     }
 
-    public void StopRecording()
+    public void StopRecording(float time)
     {
         string microphoneName = Microphone.devices[AudioDeviceIndex];
         Microphone.End(microphoneName);
 
-        float[] clipData = new float[recordingClip.samples];
+        var samples = (int)Math.Ceiling(time * recordingClip.samples / MaxRecordingTime);
+        float[] clipData = new float[samples];
         recordingClip.GetData(clipData, 0);
         var audioData = AudioTool.ClipData2WavData(clipData);
 
@@ -82,6 +86,7 @@ public class ChatGPTWrapper : MonoBehaviour
         var langQestion = langMgr[curLang];
         sp.GetSpeech2TextService(langQestion.Code).Speech2Text(audioData, recordingClip.frequency, recordingClip.channels, (question, langCode, confidence) =>
         {
+            question = question.Trim("\r\n ".ToCharArray());
             ConversationOutput.text += question + "\n";
             converstaionHistory.Add(new("question", question));
             ScollRect.verticalNormalizedPosition = 0;

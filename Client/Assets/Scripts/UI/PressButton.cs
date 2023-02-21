@@ -1,21 +1,21 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 public class PressButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-    public UnityEvent onButtonDown;
-    public UnityEvent onButtonUp;
+    public UnityEvent OnButtonDown;
+
+    public UnityEvent OnButtonUp;
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        onButtonDown.Invoke();
+        OnButtonDown?.Invoke();
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        onButtonUp.Invoke();
+        OnButtonUp?.Invoke();
     }
 }
