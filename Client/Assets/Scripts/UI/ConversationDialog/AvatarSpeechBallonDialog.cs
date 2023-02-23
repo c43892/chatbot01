@@ -10,6 +10,8 @@ public class AvatarSpeechBallonDialog : ConversationDialog
 {
     public Text AIDialog;
     public Image DialogBg;
+    public Text QuestionText;
+
     public float DialogFadeInOutTime = 0.5f;
 
     private readonly List<KeyValuePair<Peer, string>> history = new();
@@ -21,9 +23,13 @@ public class AvatarSpeechBallonDialog : ConversationDialog
         bgColor.a = 0;
         DialogBg.color = bgColor;
 
-        var textColor = AIDialog.color;
-        textColor.a = 0;
-        AIDialog.color = textColor;
+        var aiTextColor = AIDialog.color;
+        aiTextColor.a = 0;
+        AIDialog.color = aiTextColor;
+
+        var qTextColor = QuestionText.color;
+        qTextColor.a = 0;
+        QuestionText.color = qTextColor;
     }
 
     public override void AddSentence(Peer p, string content)
@@ -32,6 +38,9 @@ public class AvatarSpeechBallonDialog : ConversationDialog
         {
             case Peer.AI:
                 AITalk(content);
+                break;
+            case Peer.Me:
+                ShowQuestion(content);
                 break;
         }
 
@@ -55,24 +64,41 @@ public class AvatarSpeechBallonDialog : ConversationDialog
 
     public override void OnAudioEnded()
     {
-        if (FadeInOutHandler != null)
-            StopCoroutine(FadeInOutHandler);
+        if (AIDialogFadeInOutHandler != null)
+            StopCoroutine(AIDialogFadeInOutHandler);
 
-        FadeInOutHandler = FadeInOut(new Graphic[] { DialogBg, AIDialog }, DialogFadeInOutTime, 1, 0);
-        StartCoroutine(FadeInOutHandler);
+        AIDialogFadeInOutHandler = FadeInOut(new Graphic[] { DialogBg, AIDialog }, DialogFadeInOutTime, 1, 0);
+        StartCoroutine(AIDialogFadeInOutHandler);
+
+        if (QuestionFadeInOutHandler != null)
+            StopCoroutine(QuestionFadeInOutHandler);
+
+        QuestionFadeInOutHandler = FadeInOut(new Graphic[] { QuestionText }, DialogFadeInOutTime, 1, 0);
+        StartCoroutine(QuestionFadeInOutHandler);
     }
 
     void AITalk(string text)
     {
-        if (FadeInOutHandler != null)
-            StopCoroutine(FadeInOutHandler);
+        if (AIDialogFadeInOutHandler != null)
+            StopCoroutine(AIDialogFadeInOutHandler);
 
         AIDialog.text = text;
-        FadeInOutHandler = FadeInOut(new Graphic[] { DialogBg, AIDialog }, DialogFadeInOutTime, 0, 1);
-        StartCoroutine(FadeInOutHandler);
+        AIDialogFadeInOutHandler = FadeInOut(new Graphic[] { DialogBg, AIDialog }, DialogFadeInOutTime, 0, 1);
+        StartCoroutine(AIDialogFadeInOutHandler);
     }
 
-    IEnumerator FadeInOutHandler = null;
+    void ShowQuestion(string text)
+    {
+        if (QuestionFadeInOutHandler != null)
+            StopCoroutine(QuestionFadeInOutHandler);
+
+        QuestionText.text = text;
+        QuestionFadeInOutHandler = FadeInOut(new Graphic[] { QuestionText }, DialogFadeInOutTime, 0, 1);
+        StartCoroutine(QuestionFadeInOutHandler);
+    }
+
+    IEnumerator QuestionFadeInOutHandler = null;
+    IEnumerator AIDialogFadeInOutHandler = null;
     IEnumerator FadeInOut(IEnumerable<Graphic> gs, float time, float startAlpha, float endAlpha)
     {
         var dAlpha = endAlpha - startAlpha;
