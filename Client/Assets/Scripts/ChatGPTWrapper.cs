@@ -17,24 +17,23 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Networking;
 using UnityEngine.UI;
+using static IConversationDialog;
 using IServiceProvider = Assets.Scripts.Services.IServiceProvider;
 
 public class ChatGPTWrapper : MonoBehaviour
 {
-    readonly List<KeyValuePair<string, string>> converstaionHistory = new();
-
-    public Text ConversationOutput;
-    public ScrollRect ScollRect;
     public AudioSource MainAudioSource;
     public LangaugeSelection LangSel;
-
-    private IServiceProvider sp = null;
-    private LanguageManager langMgr = null;
-    private string curLang = null;
 
     public RecordingButton RecordingBtn = null;
     public int AudioDeviceIndex = 0;
     public int MaxRecordingTime = 10;
+
+    public ConversationDialog ConversationDialog;
+
+    private IServiceProvider sp = null;
+    private LanguageManager langMgr = null;
+    private string curLang = null;
 
     public void Start()
     {
@@ -67,59 +66,73 @@ public class ChatGPTWrapper : MonoBehaviour
         RecordingBtn.StartRecording(MaxRecordingTime);
     }
 
-    public void StopRecording(float time)
+    public void StopRecording(float timeRecorded)
     {
         string microphoneName = Microphone.devices[AudioDeviceIndex];
         Microphone.End(microphoneName);
 
-        var samples = (int)Math.Ceiling(time * recordingClip.samples / MaxRecordingTime);
+        var samples = (int)Math.Ceiling(timeRecorded * recordingClip.samples / MaxRecordingTime);
         float[] clipData = new float[samples];
         recordingClip.GetData(clipData, 0);
         var audioData = AudioTool.ClipData2WavData(clipData);
 
         void onError(string error)
         {
-            ConversationOutput.text += error + "\n";
-            ScollRect.verticalNormalizedPosition = 0;
+            ConversationDialog.OnError(error);
         }
 
         var langQestion = langMgr[curLang];
         sp.GetSpeech2TextService(langQestion.Code).Speech2Text(audioData, recordingClip.frequency, recordingClip.channels, (question, langCode, confidence) =>
         {
             question = question.Trim("\r\n ".ToCharArray());
-            ConversationOutput.text += question + "\n";
-            converstaionHistory.Add(new("question", question));
-            ScollRect.verticalNormalizedPosition = 0;
+            ConversationDialog.AddSentence(Peer.Me, question);
 
-            // assembe the conversition history
+            // assembe the conversition history, that's how chatgpt can keep the conversation context
             var prompt = "";
-            for (var i = converstaionHistory.Count - 1; i >= 0; i--)
+            foreach (var s in ConversationDialog.ReversedHistory((s) => true))
             {
-                var newLine = converstaionHistory[i].Value;
-                if (prompt.Length + newLine.Length < 2048)
-                    prompt = newLine + "\n" + prompt;
-                else
+                var newLine = s.Value;
+                if (prompt.Length + newLine.Length >= 2048)
                     break;
+
+                prompt = newLine + "\n" + prompt;
             }
 
             sp.GetChatBotService(2048).Ask(prompt, answer =>
             {
-                ConversationOutput.text += "<color=yellow>" + answer + "</color>\n\n";
-                converstaionHistory.Add(new("answer:", answer));
-                ScollRect.verticalNormalizedPosition = 0;
+                answer = answer.Trim("\r\n ".ToCharArray());
+                ConversationDialog.AddSentence(Peer.AI, answer);
 
                 var langCodeAnswer = (new LanguageDetector()).DetectLanguage(answer);
                 var langAnswer = langMgr[langCodeAnswer];
                 sp.GetText2SpeechService(langAnswer.Code, langAnswer.Model, 16000).Text2Speech(answer, audioData =>
                 {
+                    ConversationDialog.AddAudio(Peer.AI, answer, new() { audioData = audioData, sampleRate = 16000, channels = 1 });
+
+                    // construct the audio clip
                     clipData = AudioTool.WavData2ClipData(audioData);
                     var clip = AudioClip.Create("AnswerClip", audioData.Length / 2, 1, 16000, false);
                     clip.SetData(clipData, 0);
+
+                    // play the audio
                     MainAudioSource.clip = clip;
                     MainAudioSource.Play();
+
+                    StartCoroutine(Wait4Condition(
+                        () => MainAudioSource.isPlaying && MainAudioSource.time < clip.length, 
+                        ConversationDialog.OnAudioEnded
+                    ));
                 }, onError);
             }, onError);
         }, onError);
+    }
+
+    IEnumerator Wait4Condition(Func<bool> condition, Action callback)
+    {
+        while (condition())
+            yield return new WaitForEndOfFrame();
+
+        callback?.Invoke();
     }
 
     public void OnLanguageChanged(string lang)
