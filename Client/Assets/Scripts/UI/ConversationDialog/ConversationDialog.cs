@@ -15,35 +15,23 @@ public interface IConversationDialog
 
     public enum Peer
     {
-        Me,
-        AI,
-        Error,
+        user,
+        assistant,
+        error,
     }
 
     void AddSentence(Peer p, string content);
 
-    IEnumerable<KeyValuePair<Peer, string>> ReversedHistory(Func<KeyValuePair<Peer, string>, bool> filter);
-
-    void AddAudio(Peer p, string content, AudioInfo audioInfo);
-
-    AudioInfo GetAudio(Peer p, string content);
+    IEnumerable<KeyValuePair<Peer, string>> History(Func<KeyValuePair<Peer, string>, bool> filter);
 
     void OnError(string error);
-
-    void OnAudioEnded();
 }
 
 public abstract class ConversationDialog : MonoBehaviour, IConversationDialog
 {
     public abstract void AddSentence(Peer id, string content);
 
-    public abstract IEnumerable<KeyValuePair<Peer, string>> ReversedHistory(Func<KeyValuePair<Peer, string>, bool> filter);
-
-    public abstract void AddAudio(Peer id, string content, AudioInfo audioInfo);
-
-    public abstract AudioInfo GetAudio(Peer id, string content);
+    public abstract IEnumerable<KeyValuePair<Peer, string>> History(Func<KeyValuePair<Peer, string>, bool> filter);
 
     public virtual void OnError(string error) { }
-
-    public virtual void OnAudioEnded() { }
 }

@@ -25,7 +25,6 @@ public class ChatGPTWrapper : MonoBehaviour
     public AudioSource MainAudioSource;
     public LangaugeSelection LangSel;
 
-    public RecordingButton RecordingBtn = null;
     public int AudioDeviceIndex = 0;
     public int MaxRecordingTime = 10;
 
@@ -63,7 +62,6 @@ public class ChatGPTWrapper : MonoBehaviour
     {
         string microphoneName = Microphone.devices[AudioDeviceIndex];
         recordingClip = Microphone.Start(microphoneName, true, MaxRecordingTime, 16000);
-        RecordingBtn.StartRecording(MaxRecordingTime);
     }
 
     public void StopRecording(float timeRecorded)
@@ -85,11 +83,11 @@ public class ChatGPTWrapper : MonoBehaviour
         sp.GetSpeech2TextService(langQestion.Code).Speech2Text(audioData, recordingClip.frequency, recordingClip.channels, (question, langCode, confidence) =>
         {
             question = question.Trim("\r\n ".ToCharArray());
-            ConversationDialog.AddSentence(Peer.Me, question);
+            ConversationDialog.AddSentence(Peer.user, question);
 
             // assembe the conversition history, that's how chatgpt can keep the conversation context
             var prompt = "";
-            foreach (var s in ConversationDialog.ReversedHistory((s) => true))
+            foreach (var s in ConversationDialog.History((s) => true).Reverse())
             {
                 var newLine = s.Value;
                 if (prompt.Length + newLine.Length >= 2048)
@@ -98,16 +96,16 @@ public class ChatGPTWrapper : MonoBehaviour
                 prompt = newLine + "\n" + prompt;
             }
 
-            sp.GetChatBotService(2048).Ask(prompt, answer =>
+            sp.GetChatBotService(2048).Completion(prompt, answer =>
             {
                 answer = answer.Trim("\r\n ".ToCharArray());
-                ConversationDialog.AddSentence(Peer.AI, answer);
+                ConversationDialog.AddSentence(Peer.assistant, answer);
 
                 var langCodeAnswer = (new LanguageDetector()).DetectLanguage(answer);
                 var langAnswer = langMgr[langCodeAnswer];
                 sp.GetText2SpeechService(langAnswer.Code, langAnswer.Model, 16000).Text2Speech(answer, audioData =>
                 {
-                    ConversationDialog.AddAudio(Peer.AI, answer, new() { audioData = audioData, sampleRate = 16000, channels = 1 });
+                    // ConversationDialog.AddAudio(Peer.AI, answer, new() { audioData = audioData, sampleRate = 16000, channels = 1 });
 
                     // construct the audio clip
                     clipData = AudioTool.WavData2ClipData(audioData);
@@ -120,7 +118,7 @@ public class ChatGPTWrapper : MonoBehaviour
 
                     StartCoroutine(Wait4Condition(
                         () => MainAudioSource.isPlaying && MainAudioSource.time < clip.length, 
-                        ConversationDialog.OnAudioEnded
+                        null // ConversationDialog.OnAudioEnded
                     ));
                 }, onError);
             }, onError);
@@ -138,5 +136,28 @@ public class ChatGPTWrapper : MonoBehaviour
     public void OnLanguageChanged(string lang)
     {
         curLang = lang;
+    }
+
+
+    public InputField Input;
+
+    public void OnSubmit()
+    {
+        void onError(string error)
+        {
+            ConversationDialog.OnError(error);
+        }
+
+        var question = Input.text.Trim("\r\n ".ToCharArray());
+        Input.text = "";
+        ConversationDialog.AddSentence(Peer.user, question);
+
+        var history = ConversationDialog.History((s) => s.Key != Peer.error);
+        var messages = history.Select((s) => new KeyValuePair<string, string>(s.Key.ToString(), s.Value));
+        sp.GetChatBotService(2048).Chat(messages, answer =>
+            {
+                answer = answer.Trim("\r\n ".ToCharArray());
+                ConversationDialog.AddSentence(Peer.assistant, answer);
+            }, onError);
     }
 }

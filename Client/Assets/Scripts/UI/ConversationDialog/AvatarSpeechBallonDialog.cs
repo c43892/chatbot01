@@ -36,10 +36,10 @@ public class AvatarSpeechBallonDialog : ConversationDialog
     {
         switch (p)
         {
-            case Peer.AI:
+            case Peer.assistant:
                 AITalk(content);
                 break;
-            case Peer.Me:
+            case Peer.user:
                 ShowQuestion(content);
                 break;
         }
@@ -47,22 +47,22 @@ public class AvatarSpeechBallonDialog : ConversationDialog
         history.Add(new(p, content));
     }
 
-    public override IEnumerable<KeyValuePair<Peer, string>> ReversedHistory(Func<KeyValuePair<Peer, string>, bool> filter)
+    public override IEnumerable<KeyValuePair<Peer, string>> History(Func<KeyValuePair<Peer, string>, bool> filter)
     {
-        return history.Where(filter).Reverse();
+        return history.Where(filter);
     }
 
-    public override void AddAudio(Peer p, string content, AudioInfo audioInfo)
+    public void AddAudio(Peer p, string content, AudioInfo audioInfo)
     {
         audioInfos[new(p, content)] = audioInfo;
     }
 
-    public override AudioInfo GetAudio(Peer p, string content)
+    public AudioInfo GetAudio(Peer p, string content)
     {
         return audioInfos.ContainsKey(new(p, content)) ? audioInfos[new(p, content)] : null;
     }
 
-    public override void OnAudioEnded()
+    public void OnAudioEnded()
     {
         if (AIDialogFadeInOutHandler != null)
             StopCoroutine(AIDialogFadeInOutHandler);

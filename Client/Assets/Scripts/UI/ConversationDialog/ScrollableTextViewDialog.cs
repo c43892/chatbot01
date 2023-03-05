@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -12,7 +13,7 @@ using Color = UnityEngine.Color;
 class ScrollableTextViewDialog : ConversationDialog
 {
     public ScrollRect ScollRect;
-    public Text TextView;
+    public Speaking Speaking;
 
     public Color ColorMe = Color.white;
     public Color ColorAI = Color.yellow;
@@ -23,33 +24,39 @@ class ScrollableTextViewDialog : ConversationDialog
 
     private string formatColor(Color c)
     {
-        return string.Format("{0:00}{1:00}{2:00}{3:00}", (int)(c.r * 255), (int)(c.g * 255), (int)(c.b * 255), (int)(c.a * 255));
+        return string.Format("#{0:X02}{1:X02}{2:X02}{3:X02}", (int)(c.r * 255), (int)(c.g * 255), (int)(c.b * 255), (int)(c.a * 255));
     }
 
     public override void AddSentence(Peer p, string content)
     {
         history.Add(new(p, content));
-        var color = p == Peer.Me ? ColorMe : (p == Peer.AI ? ColorAI : ColorError);
-        TextView.text +=  "<color=" + formatColor(color) + ">"+ content + "</color>\n\n";
+        var color = p == Peer.user ? ColorMe : (p == Peer.assistant ? ColorAI : ColorError);
+        var speaking = Instantiate(Speaking);
+        speaking.Uncopied.gameObject.SetActive(p == Peer.assistant);
+        speaking.Copied.gameObject.SetActive(false);
+        speaking.IconMe.gameObject.SetActive(p == Peer.user);
+        speaking.IconError.gameObject.SetActive(p == Peer.error);
+        speaking.transform.SetParent(Speaking.transform.parent);
+        speaking.gameObject.SetActive(true);
+        speaking.Text.color = color;
+        speaking.Text.text = content;
+
+        StartCoroutine(ScrollToBottom());
     }
 
-    public override IEnumerable<KeyValuePair<Peer, string>> ReversedHistory(Func<KeyValuePair<Peer, string>, bool> filter)
+    IEnumerator ScrollToBottom()
     {
-        return history.Where(filter).Reverse();
+        yield return new WaitForEndOfFrame();
+        ScollRect.verticalNormalizedPosition = 0;
     }
 
-    public override void AddAudio(Peer p, string content, AudioInfo audioInfo)
+    public override IEnumerable<KeyValuePair<Peer, string>> History(Func<KeyValuePair<Peer, string>, bool> filter)
     {
-        audioInfos[new(p, content)] = audioInfo;
-    }
-
-    public override AudioInfo GetAudio(Peer p, string content)
-    {
-        return audioInfos.ContainsKey(new(p, content)) ? audioInfos[new(p, content)] : null;
+        return history.Where(filter);
     }
 
     public override void OnError(string error)
     {
-        AddSentence(Peer.Error, error);
+        AddSentence(Peer.error, error);
     }
 }
