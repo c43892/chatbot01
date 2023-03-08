@@ -8,8 +8,6 @@ namespace Assets.Scripts.Services
 {
     public interface IText2SpeechService
     {
-        int SampleRate { get; }
-
-        void Text2Speech(string text, Action<byte[]> onResponse, Action<string> onError);
+        void Text2Speech(string text, int sampleRate, Action<byte[]> onResponse, Action<string> onError);
     }
 }

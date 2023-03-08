@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Assets.Scripts.Languages;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,23 +12,21 @@ namespace Assets.Scripts.Services.BrainCloud
     {
         string languageCode;
         string languageModel;
-        public int SampleRate { get; private set; }
 
-        internal Text2SpeechService(BrainCloudWrapper wrapper, string langCode, string langModel, int sampleRate) : base(wrapper)
+        internal Text2SpeechService(BrainCloudWrapper wrapper, string langCode, string langModel) : base(wrapper)
         {
             languageCode = langCode;
             languageModel = langModel;
-            SampleRate = sampleRate;
         }
 
-        public void Text2Speech(string text, Action<byte[]> onResponse, Action<string> onError)
+        public void Text2Speech(string text, int sampleRate, Action<byte[]> onResponse, Action<string> onError)
         {
             var jsonArgs = @"
 {
     ""text"": """ + text + @""",
     ""languageCode"": """ + languageCode + @""",
     ""langaugeModel"": """ + languageModel + @""",
-    ""sampleRateHertz"":" + SampleRate + @"
+    ""sampleRateHertz"":" + sampleRate + @"
 }";
 
             RunScript("text2Speech", jsonArgs, (response)  =>

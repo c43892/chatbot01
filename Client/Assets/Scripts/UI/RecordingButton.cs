@@ -1,3 +1,4 @@
+using Assets.Scripts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,40 +10,59 @@ using UnityEngine.UI;
 public class RecordingButton : PressButton
 {
     [System.Serializable]
-    public class RecordingDoneEvent : UnityEvent<float> { }
+    public class RecordingDoneEvent : UnityEvent<float, byte[]> { }
 
-    public Image RecordingRing;
+    public UnityEvent OnRecordingStarted;
     public RecordingDoneEvent OnRecordingDone;
 
-    private float maxRecordingSecs = 10;
+    public Image RecordingRing;
 
+    public int SampleRate = 16000;
+    public int MaxRecordingSecs = 10;
+    public int AudioDeviceIndex = 0;
+
+    private AudioClip recordingClip;
     private float recordingSecsLeft = 0;
 
     private void Awake()
     {
         RecordingRing.fillAmount = 0;
+        OnButtonDown.AddListener(StartRecording);
     }
 
-    public void StartRecording(float maxTime)
+    public void StartRecording()
     {
-        if (Mathf.Approximately(maxTime, Mathf.Epsilon))
-            return;
-
-        maxRecordingSecs = maxTime;
-        recordingSecsLeft = maxRecordingSecs;
+        recordingSecsLeft = MaxRecordingSecs;
         RecordingRing.fillAmount = 0;
+
+        string microphoneName = Microphone.devices[AudioDeviceIndex];
+        recordingClip = Microphone.Start(microphoneName, true, MaxRecordingSecs, SampleRate);
+
         OnButtonUp.AddListener(StopRecording);
+        OnRecordingStarted?.Invoke();
     }
 
     public void StopRecording()
     {
-        var time = maxRecordingSecs - recordingSecsLeft;
-        time = time > maxRecordingSecs ? maxRecordingSecs : time;
-        OnRecordingDone?.Invoke(time);
+        if (recordingSecsLeft <= 0)
+            return;
 
         OnButtonUp.RemoveListener(StopRecording);
         recordingSecsLeft = 0;
         RecordingRing.fillAmount = 0;
+
+        var time = MaxRecordingSecs - recordingSecsLeft;
+        time = time > MaxRecordingSecs ? MaxRecordingSecs : time;
+
+        string microphoneName = Microphone.devices[AudioDeviceIndex];
+        Microphone.End(microphoneName);
+
+        var samples = (int)Math.Ceiling(time * recordingClip.samples / MaxRecordingSecs);
+        float[] clipData = new float[samples];
+        recordingClip.GetData(clipData, 0);
+        var audioData = AudioTool.ClipData2WavData(clipData);
+
+        OnRecordingDone?.Invoke(time, audioData);
     }
 
     private void Update()
@@ -53,7 +73,7 @@ public class RecordingButton : PressButton
             if (recordingSecsLeft <= 0)
                 StopRecording();
             else
-                RecordingRing.fillAmount = (maxRecordingSecs - recordingSecsLeft) / maxRecordingSecs;
+                RecordingRing.fillAmount = (MaxRecordingSecs - recordingSecsLeft) / MaxRecordingSecs;
         }
     }
 }

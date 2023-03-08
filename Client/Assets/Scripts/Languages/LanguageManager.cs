@@ -6,6 +6,13 @@ using System.Threading.Tasks;
 
 namespace Assets.Scripts.Languages
 {
+    public enum LanguageCode
+    {
+        en,
+        cn,
+        fr
+    }
+
     public class LanguageManager
     {
         readonly Dictionary<string, LanguageInfo> languages;
