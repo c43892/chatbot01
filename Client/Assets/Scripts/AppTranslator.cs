@@ -32,6 +32,15 @@ public class AppTranslator : MonoBehaviour
     private LanguageCode LanguageA = LanguageCode.cn;
     private LanguageCode LanguageB = LanguageCode.en;
 
+    private void Awake()
+    {
+        RecordingButtonA.OnRecordingStarted.AddListener(OnRecAStarted);
+        RecordingButtonB.OnRecordingStarted.AddListener(OnRecBStarted);
+
+        RecordingButtonA.OnRecordingDone.AddListener(OnRecADone);
+        RecordingButtonB.OnRecordingDone.AddListener(OnRecBDone);
+    }
+
     public void Start()
     {
         var bcsp = new BrainCloudServiceProvider();
