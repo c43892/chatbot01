@@ -18,6 +18,7 @@ namespace Assets.Scripts.Services.BrainCloud
                 case LanguageCode.en: return "English";
                 case LanguageCode.cn: return "Simplified Chinese";
                 case LanguageCode.fr: return "French";
+                case LanguageCode.ja: return "Japanese";
                 default: throw new Exception(code + " is not supported yet");
             }
         }
@@ -25,12 +26,15 @@ namespace Assets.Scripts.Services.BrainCloud
         public void Translate(string srcText, LanguageCode srcLang, LanguageCode dstLang, Action<string> onResponse, Action<string> onError)
         {
             var jsonArgs = @"{""messages"":[{""role"":""system"", ""content"":""you're a prefect translator.""},";
-            jsonArgs += @"{""role"":""user"", ""content"":""Translate this text from " + GetLanguageName(srcLang) + @" to " + GetLanguageName(dstLang) + @":" + srcText + @"""}]}";
+            jsonArgs += @"{""role"":""user"", ""content"":""Translate this text from " + GetLanguageName(srcLang) + @" to " + GetLanguageName(dstLang) + @" without additional notes or anything else:" + srcText + @"""}]}";
 
             RunScript("chatgpt_chat", jsonArgs, (response) =>
             {
                 if (response["status"] == "succeed")
-                    onResponse?.Invoke(response["answer"].Trim('"'));
+                {
+                    var txt = response["answer"].Trim("'\"() ,.!?".ToCharArray());
+                    onResponse?.Invoke(txt);
+                }
                 else
                     onError?.Invoke(response["statusMessage"]);
             }, onError);

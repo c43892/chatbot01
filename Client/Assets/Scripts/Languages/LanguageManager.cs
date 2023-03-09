@@ -10,7 +10,8 @@ namespace Assets.Scripts.Languages
     {
         en,
         cn,
-        fr
+        fr,
+        ja,
     }
 
     public class LanguageManager

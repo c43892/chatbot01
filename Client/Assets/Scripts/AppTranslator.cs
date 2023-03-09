@@ -51,7 +51,8 @@ public class AppTranslator : MonoBehaviour
         {
             LanguageCode.cn,
             LanguageCode.en,
-            LanguageCode.fr
+            LanguageCode.fr,
+            LanguageCode.ja
         });
 
         var bcsp = new BrainCloudServiceProvider();
@@ -65,6 +66,11 @@ public class AppTranslator : MonoBehaviour
         });
 
         TranscriptA.text = TranscriptB.text = "";
+
+        langA = LanguageCode.cn;
+        LangaugeIconA.sprite = langSelPanel.GetSprite(langA);
+        langB = LanguageCode.en;
+        LangaugeIconB.sprite = langSelPanel.GetSprite(langB);
     }
 
     void onError(string error)
@@ -151,6 +157,7 @@ public class AppTranslator : MonoBehaviour
         {
             langA = lang;
             LangaugeIconA.sprite = sprite;
+            TranscriptA.text = "";
         });
     }
 
@@ -160,6 +167,7 @@ public class AppTranslator : MonoBehaviour
         {
             langB = lang;
             LangaugeIconB.sprite = sprite;
+            TranscriptB.text = "";
         });
     }
 }

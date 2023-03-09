@@ -24,10 +24,13 @@ public class LangaugeSelectionPanel : MonoBehaviour
 
     Dictionary<LanguageCode, Sprite> AllIcons = null;
 
-    public void OpenSelection(IEnumerable<LanguageCode> allSupported, LanguageCode defaultLang, Action<LanguageCode, Sprite> onSelected)
+    private void Awake()
     {
         PrepareIcons();
+    }
 
+    public void OpenSelection(IEnumerable<LanguageCode> allSupported, LanguageCode defaultLang, Action<LanguageCode, Sprite> onSelected)
+    {
         Root.gameObject.SetActive(true);
 
         while (IconContainer.childCount > 0)
@@ -54,6 +57,11 @@ public class LangaugeSelectionPanel : MonoBehaviour
         }
     }
 
+    public Sprite GetSprite(LanguageCode lang)
+    {
+        return AllIcons[lang];
+    }
+
     void PrepareIcons()
     {
         if (AllIcons != null)
@@ -62,5 +70,10 @@ public class LangaugeSelectionPanel : MonoBehaviour
         AllIcons = new Dictionary<LanguageCode, Sprite>();
         foreach (var pair in AllLanguageIcons)
             AllIcons.Add(pair.Language, pair.Icon);
+    }
+
+    public void CancelSelection()
+    {
+        Root.gameObject.SetActive(false);
     }
 }

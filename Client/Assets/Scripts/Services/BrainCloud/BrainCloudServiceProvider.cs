@@ -19,6 +19,7 @@ namespace Assets.Scripts.Services.BrainCloud
                 case LanguageCode.cn: return "cmn_CN";
                 case LanguageCode.en: return "en-US";
                 case LanguageCode.fr: return "fr-FR";
+                case LanguageCode.ja: return "ja-JP";
                 default: throw new Exception(code + " is not supported yet");
             }
         }
@@ -30,6 +31,7 @@ namespace Assets.Scripts.Services.BrainCloud
                 case LanguageCode.cn: return "cmn-CN-Standard-D";
                 case LanguageCode.en: return "en-US-Neural2-G";
                 case LanguageCode.fr: return "fr-FR-Neural2-A";
+                case LanguageCode.ja: return "ja-JP-Neural2-B";
                 default: throw new Exception(code + " is not supported yet");
             }
         }
