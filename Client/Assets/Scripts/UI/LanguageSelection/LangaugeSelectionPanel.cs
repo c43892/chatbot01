@@ -63,4 +63,9 @@ public class LangaugeSelectionPanel : MonoBehaviour
         foreach (var pair in AllLanguageIcons)
             AllIcons.Add(pair.Language, pair.Icon);
     }
+
+    public void CancelSelection()
+    {
+        Root.gameObject.SetActive(false);
+    }
 }

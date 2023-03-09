@@ -51,7 +51,8 @@ public class AppTranslator : MonoBehaviour
         {
             LanguageCode.cn,
             LanguageCode.en,
-            LanguageCode.fr
+            LanguageCode.fr,
+            LanguageCode.ja
         });
 
         var bcsp = new BrainCloudServiceProvider();
