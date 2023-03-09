@@ -18,7 +18,7 @@ namespace Assets.Scripts.Services.BrainCloud
                 case LanguageCode.en: return "English";
                 case LanguageCode.cn: return "Simplified Chinese";
                 case LanguageCode.fr: return "French";
-                default: return "English";
+                default: throw new Exception(code + " is not supported yet");
             }
         }
 
@@ -30,7 +30,7 @@ namespace Assets.Scripts.Services.BrainCloud
             RunScript("chatgpt_chat", jsonArgs, (response) =>
             {
                 if (response["status"] == "succeed")
-                    onResponse?.Invoke(response["answer"]);
+                    onResponse?.Invoke(response["answer"].Trim('"'));
                 else
                     onError?.Invoke(response["statusMessage"]);
             }, onError);

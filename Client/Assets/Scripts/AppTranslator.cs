@@ -25,12 +25,16 @@ public class AppTranslator : MonoBehaviour
     public AudioSource AudioSrouce;
     public RecordingButton RecordingButtonA;
     public RecordingButton RecordingButtonB;
+    public Image LangaugeIconA;
+    public Image LangaugeIconB;
     public Text TranscriptA;
     public Text TranscriptB;
+    public LangaugeSelectionPanel langSelPanel;
 
     private IServiceProvider sp = null;
-    private LanguageCode LanguageA = LanguageCode.cn;
-    private LanguageCode LanguageB = LanguageCode.en;
+    private LanguageManager langMgr = null;
+    private LanguageCode langA = LanguageCode.cn;
+    private LanguageCode langB = LanguageCode.en;
 
     private void Awake()
     {
@@ -43,6 +47,13 @@ public class AppTranslator : MonoBehaviour
 
     public void Start()
     {
+        langMgr = new LanguageManager(new LanguageCode[]
+        {
+            LanguageCode.cn,
+            LanguageCode.en,
+            LanguageCode.fr
+        });
+
         var bcsp = new BrainCloudServiceProvider();
         bcsp.Init(gameObject.AddComponent<BrainCloudWrapper>(), () =>
         {
@@ -68,7 +79,7 @@ public class AppTranslator : MonoBehaviour
 
     public void OnRecADone(float time, byte[] audioData)
     {
-        Speech2SpeechTranslation(LanguageA, LanguageB, audioData, RecordingButtonA.SampleRate,
+        Speech2SpeechTranslation(langA, langB, audioData, RecordingButtonA.SampleRate,
             srcText => TranscriptA.text = srcText,
             dstText => TranscriptB.text = dstText,
             (audioData) => {
@@ -89,7 +100,7 @@ public class AppTranslator : MonoBehaviour
 
     public void OnRecBDone(float time, byte[] audioData)
     {
-        Speech2SpeechTranslation(LanguageB, LanguageA, audioData, RecordingButtonB.SampleRate,
+        Speech2SpeechTranslation(langB, langA, audioData, RecordingButtonB.SampleRate,
             srcText => TranscriptB.text = srcText,
             dstText => TranscriptA.text = dstText,
             (audioData) => {
@@ -132,5 +143,23 @@ public class AppTranslator : MonoBehaviour
         clip.SetData(dstClipData, 0);
 
         return clip;
+    }
+
+    public void OnChangeLanaguageA()
+    {
+        langSelPanel.OpenSelection(langMgr.Languages, langMgr.Languages[0], (lang, sprite) =>
+        {
+            langA = lang;
+            LangaugeIconA.sprite = sprite;
+        });
+    }
+
+    public void OnChangeLanaguageB()
+    {
+        langSelPanel.OpenSelection(langMgr.Languages, langMgr.Languages[1], (lang, sprite) =>
+        {
+            langB = lang;
+            LangaugeIconB.sprite = sprite;
+        });
     }
 }

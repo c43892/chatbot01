@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Assets.Scripts.Languages
 {
-    public class LanguageDetector
+    public static class LanguageDetector
     {
-        public string DetectLanguage(string text)
+        public static string DetectLanguage(string text)
         {
             if (IsSimplifiedChinese(text))
                 return "cn";

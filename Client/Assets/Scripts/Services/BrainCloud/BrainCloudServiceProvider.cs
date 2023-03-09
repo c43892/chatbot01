@@ -12,25 +12,25 @@ namespace Assets.Scripts.Services.BrainCloud
         readonly Dictionary<string, IChatBotService> chatBotServices = new Dictionary<string, IChatBotService>();
         TranslationService translationService;
 
-        string LanguageCode2Name(LanguageCode lang)
+        string LanguageCode2Name(LanguageCode code)
         {
-            switch (lang)
+            switch (code)
             {
                 case LanguageCode.cn: return "cmn_CN";
                 case LanguageCode.en: return "en-US";
                 case LanguageCode.fr: return "fr-FR";
-                default: return "en-US";
+                default: throw new Exception(code + " is not supported yet");
             }
         }
 
-        string LanguageCode2ModelName(LanguageCode lang)
+        string LanguageCode2ModelName(LanguageCode code)
         {
-            switch (lang)
+            switch (code)
             {
                 case LanguageCode.cn: return "cmn-CN-Standard-D";
                 case LanguageCode.en: return "en-US-Neural2-G";
                 case LanguageCode.fr: return "fr-FR-Neural2-A";
-                default: return "cmn-CN-Standard-D";
+                default: throw new Exception(code + " is not supported yet");
             }
         }
         public void Init(BrainCloudWrapper wrapper, Action onResponse, Action<int, int> onError)
