@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace Assets.Scripts.Services.BrainCloud
 {
-    class TranslationService : BrainCloudServiceService, ITransationService
+    class ChatGPTTranslationService : BrainCloudServiceService, ITransationService
     {
-        internal TranslationService(BrainCloudWrapper wrapper) : base(wrapper) { }
+        internal ChatGPTTranslationService(BrainCloudWrapper wrapper) : base(wrapper) { }
 
         string GetLanguageName(LanguageCode code)
         {
