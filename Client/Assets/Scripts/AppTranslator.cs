@@ -30,6 +30,7 @@ public class AppTranslator : MonoBehaviour
     public Text TranscriptA;
     public Text TranscriptB;
     public LangaugeSelectionPanel langSelPanel;
+    public IAPManager IapMgr;
 
     private IServiceProvider sp = null;
     private LanguageManager langMgr = null;
@@ -162,5 +163,10 @@ public class AppTranslator : MonoBehaviour
             langB = lang;
             LangaugeIconB.sprite = sprite;
         });
+    }
+
+    public void OnIapButton()
+    {
+        IapMgr.ShowPurchaseView();
     }
 }
