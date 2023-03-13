@@ -30,6 +30,7 @@ public class AppTranslator : MonoBehaviour
     public Text TranscriptA;
     public Text TranscriptB;
     public LangaugeSelectionPanel langSelPanel;
+    public IAPManager IapMgr;
 
     private IServiceProvider sp = null;
     private LanguageManager langMgr = null;
@@ -134,7 +135,7 @@ public class AppTranslator : MonoBehaviour
         {
             srcText = srcText.Trim("\r\n ".ToCharArray());
             onSrcText?.Invoke(srcText);
-            sp.GetTranslationService().Translate(srcText, srcLang, dstLang, (dstText) =>
+            sp.GetTranslationService("chatgpt").Translate(srcText, srcLang, dstLang, (dstText) =>
             {
                 onDstText?.Invoke(dstText);
                 sp.GetText2SpeechService(dstLang, sampleRate).Text2Speech(dstText, sampleRate, onResponse, onError);
@@ -169,5 +170,10 @@ public class AppTranslator : MonoBehaviour
             LangaugeIconB.sprite = sprite;
             TranscriptB.text = "";
         });
+    }
+
+    public void OnIapButton()
+    {
+        IapMgr.ShowPurchaseView();
     }
 }

@@ -10,7 +10,7 @@ namespace Assets.Scripts.Services.BrainCloud
         readonly Dictionary<string, IText2SpeechService> text2SpeechServices = new Dictionary<string, IText2SpeechService>();
         readonly Dictionary<string, ISpeech2TextService> speech2TextServices = new Dictionary<string, ISpeech2TextService>();
         readonly Dictionary<string, IChatBotService> chatBotServices = new Dictionary<string, IChatBotService>();
-        TranslationService translationService;
+        readonly Dictionary<string, ITransationService> translationServices = new Dictionary<string, ITransationService>();
 
         string LanguageCode2Name(LanguageCode code)
         {
@@ -79,12 +79,18 @@ namespace Assets.Scripts.Services.BrainCloud
             return chatBotServices[maxPayload.ToString()];
         }
 
-        public ITransationService GetTranslationService()
+        public ITransationService GetTranslationService(string type)
         {
-            if (translationService == null)
-                translationService = new TranslationService(bcw);
+            Dictionary<string, Func<ITransationService>> creators = new()
+            {
+                { "chatgpt", () => new ChatGPTTranslationService(bcw) },
+                { "deepl", () => null },
+            };
 
-            return translationService;
+            if (!translationServices.ContainsKey(type))
+                translationServices[type] = creators[type]();
+
+            return translationServices[type];
         }
     }
 }

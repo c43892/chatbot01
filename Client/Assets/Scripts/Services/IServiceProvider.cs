@@ -15,6 +15,6 @@ namespace Assets.Scripts.Services
 
         IChatBotService GetChatBotService(int maxPayload);
 
-        ITransationService GetTranslationService();
+        ITransationService GetTranslationService(string type);
     }
 }
