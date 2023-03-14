@@ -16,6 +16,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Networking;
+using UnityEngine.Purchasing;
 using UnityEngine.UI;
 using static IConversationDialog;
 using IServiceProvider = Assets.Scripts.Services.IServiceProvider;
@@ -29,6 +30,7 @@ public class AppTranslator : MonoBehaviour
     public Image LangaugeIconB;
     public Text TranscriptA;
     public Text TranscriptB;
+    public Text CreditsValue;
     public LangaugeSelectionPanel langSelPanel;
     public IAPManager IapMgr;
     public Authentication Auth;
@@ -176,7 +178,35 @@ public class AppTranslator : MonoBehaviour
 
     public void OnIapButton()
     {
+        var accService = sp.GetAccountService();
+        if (!accService.Signed)
+            return;
+
         IapMgr.ShowPurchaseView();
+    }
+
+    public void OnIapSuccess(Product product)
+    {
+        Debug.Log("purchase success: " + product.transactionID);
+        var credits = IapMgr.ProductId2Credits(product.definition.id);
+
+        var accService = sp.GetAccountService();
+        var acc = accService.Me;
+        acc.Info.Credits += credits;
+        accService.UpdateAccountInfo(acc, (acc) =>
+        {
+            Debug.Log("updated ok");
+            CreditsValue.text = acc.Info.Credits.ToString();
+            IapMgr.Hide();
+        }, (error) =>
+        {
+            Debug.Log("updated failed: " + error);
+        });
+    }
+
+    public void OnIapFailed(PurchaseFailureReason reason)
+    {
+        Debug.Log("purchase failed: " + reason);
     }
 
     public void OnSignIn(string playerId)
@@ -185,6 +215,8 @@ public class AppTranslator : MonoBehaviour
         {
             Debug.Log("login: " + acc.ID);
             Auth.Hide();
+
+            CreditsValue.text = acc.Info.Credits.ToString();
         }, error =>
         {
             Debug.LogError(error);
