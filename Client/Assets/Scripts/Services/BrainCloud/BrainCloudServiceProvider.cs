@@ -11,6 +11,7 @@ namespace Assets.Scripts.Services.BrainCloud
         readonly Dictionary<string, ISpeech2TextService> speech2TextServices = new Dictionary<string, ISpeech2TextService>();
         readonly Dictionary<string, IChatBotService> chatBotServices = new Dictionary<string, IChatBotService>();
         readonly Dictionary<string, ITransationService> translationServices = new Dictionary<string, ITransationService>();
+        IAccountService accountService = null; 
 
         string LanguageCode2Name(LanguageCode code)
         {
@@ -92,5 +93,14 @@ namespace Assets.Scripts.Services.BrainCloud
 
             return translationServices[type];
         }
+
+        public IAccountService GetAccountService()
+        {
+            if (accountService == null)
+                accountService = new AccountService(bcw);
+
+            return accountService;
+        }
+
     }
 }

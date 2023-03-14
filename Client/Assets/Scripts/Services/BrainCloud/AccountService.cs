@@ -11,7 +11,7 @@ namespace Assets.Scripts.Services.BrainCloud
     {
         public AccountService(BrainCloudWrapper bcw) : base(bcw) { }
 
-        public void CreateNewAccount(string linkID, string platform, Action<Account> onResponse, Action<string> onError)
+        public void CreateOrSign(string linkID, string platform, Action<Account> onResponse, Action<string> onError)
         {
             var json = @"{""linkID"":""" + linkID + @""", ""platform"":""" + platform + @"""}";
             RunScript("update_account_info", json, (response) =>

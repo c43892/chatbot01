@@ -31,6 +31,7 @@ public class AppTranslator : MonoBehaviour
     public Text TranscriptB;
     public LangaugeSelectionPanel langSelPanel;
     public IAPManager IapMgr;
+    public Authentication Auth;
 
     private IServiceProvider sp = null;
     private LanguageManager langMgr = null;
@@ -61,6 +62,7 @@ public class AppTranslator : MonoBehaviour
         {
             sp = bcsp;
             Debug.Log("BrainCLoud init ok");
+            Auth.SignIn();
         }, (status, errorCode) =>
         {
             Debug.LogError("BrainCloud init failed: " + status + ":" + errorCode);
@@ -175,5 +177,13 @@ public class AppTranslator : MonoBehaviour
     public void OnIapButton()
     {
         IapMgr.ShowPurchaseView();
+    }
+
+    public void OnSignIn(string playerId)
+    {
+        sp.GetAccountService().CreateOrSign(playerId, Application.platform.ToString(), acc =>
+        {
+            Debug.Log("login: " + acc.ID);
+        }, error => Debug.LogError(error));
     }
 }
