@@ -184,6 +184,11 @@ public class AppTranslator : MonoBehaviour
         sp.GetAccountService().CreateOrSign(playerId, Application.platform.ToString(), acc =>
         {
             Debug.Log("login: " + acc.ID);
-        }, error => Debug.LogError(error));
+            Auth.Hide();
+        }, error =>
+        {
+            Debug.LogError(error);
+            Auth.SignIn();
+        });
     }
 }

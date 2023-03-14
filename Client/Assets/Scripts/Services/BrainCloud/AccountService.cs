@@ -13,8 +13,8 @@ namespace Assets.Scripts.Services.BrainCloud
 
         public void CreateOrSign(string linkID, string platform, Action<Account> onResponse, Action<string> onError)
         {
-            var json = @"{""linkID"":""" + linkID + @""", ""platform"":""" + platform + @"""}";
-            RunScript("update_account_info", json, (response) =>
+            var json = @"{""linkId"":""" + linkID + @""", ""platform"":""" + platform + @"""}";
+            RunScript("create_or_sign_account", json, (response) =>
             {
                 if (response["status"] == "succeed")
                 {

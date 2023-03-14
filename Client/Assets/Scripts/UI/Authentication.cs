@@ -14,6 +14,11 @@ public class Authentication : MonoBehaviour
 
     public UnityEvent<string> OnSignIn = null;
 
+    public void Hide()
+    {
+        Root.gameObject.SetActive(false);
+    }
+
     public void SignIn()
     {
         Root.gameObject.SetActive(true);
@@ -21,7 +26,6 @@ public class Authentication : MonoBehaviour
 
         SignInAnonymously((playerId) =>
         {
-            Root.gameObject.SetActive(false);
             OnSignIn?.Invoke(playerId);
         }, (error) =>
         {

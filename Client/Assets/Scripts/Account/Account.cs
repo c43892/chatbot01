@@ -5,19 +5,15 @@ using UnityEngine;
 
 public class Account
 {
-    [JsonProperty("id")]
+    [JsonProperty("linkId")]
     public string ID { get; private set; }
-
-    [JsonProperty("linkID")]
-    public string LinkID { get; private set; }
 
     [JsonProperty("info")]
     public AccountInfo Info { get; private set; }
 
-    public Account(string id, string linkId, AccountInfo info)
+    public Account(string linkId, AccountInfo info)
     {
-        ID = id;
-        LinkID = linkId;
+        ID = linkId;
         Info = info;
     }
 }
