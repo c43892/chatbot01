@@ -21,7 +21,7 @@ var prompt = speech2textResponse.data.json.results[0].alternatives[0].transcript
 // chatgpt completion
 var chatgptResponse = httpClientService.postJsonResponseJson("chatgpt", "", {
     "Content-Type": "application/json",
-    "Authorization": "Bearer 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"
+    "Authorization": "Bearer <OPENAI_API_TOKEN>"
 }, {
     "prompt": prompt,
     "model": "text-davinci-003",

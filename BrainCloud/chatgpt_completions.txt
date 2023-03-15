@@ -1,4 +1,4 @@
-var apiKey = "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";
+var apiKey = <OPENAI_API_TOKEN>;
 var messages = data.messages;
 
 var httpClientService = bridge.getHttpClientServiceProxy();

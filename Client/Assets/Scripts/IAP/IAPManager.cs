@@ -4,12 +4,28 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Purchasing;
 
-public class IAPManager : MonoBehaviour
+public class IAPManager : MonoBehaviour, IStoreListener
 {
     public Transform CreditPurchaseView;
 
     public UnityEvent<Product> OnSuccess = null;
     public UnityEvent<PurchaseFailureReason> OnFailed = null;
+
+    void Start()
+    {
+        InitializePurchasing();
+    }
+
+    void InitializePurchasing()
+    {
+        var builder = ConfigurationBuilder.Instance(StandardPurchasingModule.Instance());
+
+        //Add products that will be purchasable and indicate its type.
+        builder.AddProduct("com.daybreak.voicetranslator.basicpackage", ProductType.Consumable);
+        builder.AddProduct("com.daybreak.voicetranslator.smallpackage", ProductType.Consumable);
+
+        UnityPurchasing.Initialize(this, builder);
+    }
 
     public void ShowPurchaseView()
     {
@@ -39,5 +55,30 @@ public class IAPManager : MonoBehaviour
             case "com.daybreak.voicetranslator.smallpackage": return 150;
             default: return 0;
         }
+    }
+
+    void IStoreListener.OnInitializeFailed(InitializationFailureReason error)
+    {
+        Debug.Log(error.ToString());
+    }
+
+    void IStoreListener.OnInitializeFailed(InitializationFailureReason error, string message)
+    {
+        Debug.Log(message);
+    }
+
+    PurchaseProcessingResult IStoreListener.ProcessPurchase(PurchaseEventArgs args)
+    {
+        return PurchaseProcessingResult.Complete;
+    }
+
+    void IStoreListener.OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
+    {
+        Debug.Log(failureReason.ToString());
+    }
+
+    void IStoreListener.OnInitialized(IStoreController controller, IExtensionProvider extensions)
+    {
+        Debug.Log("In-App Purchasing successfully initialized");
     }
 }
