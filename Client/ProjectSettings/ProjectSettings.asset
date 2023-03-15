@@ -163,8 +163,8 @@ PlayerSettings:
     tvOS: 0
   overrideDefaultApplicationIdentifier: 1
   AndroidBundleVersionCode: 1
-  AndroidMinSdkVersion: 31
-  AndroidTargetSdkVersion: 0
+  AndroidMinSdkVersion: 28
+  AndroidTargetSdkVersion: 31
   AndroidPreferredInstallLocation: 1
   aotOptions: 
   stripEngineCode: 1
@@ -250,7 +250,7 @@ PlayerSettings:
   AndroidTargetDevices: 0
   AndroidSplashScreenScale: 0
   androidSplashScreen: {fileID: 0}
-  AndroidKeystoreName: C:/Users/c4389/works/unity/ChatGPT01/certificate/google_android_debug.keystore
+  AndroidKeystoreName: C:/Work/ChatBot01/certificate/google_android_debug.keystore
   AndroidKeyaliasName: voicetranslator
   AndroidBuildApkPerCpuArchitecture: 0
   AndroidTVCompatibility: 0
