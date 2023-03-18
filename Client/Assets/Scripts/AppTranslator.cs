@@ -16,6 +16,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Networking;
+using UnityEngine.Purchasing;
 using UnityEngine.UI;
 using static IConversationDialog;
 using IServiceProvider = Assets.Scripts.Services.IServiceProvider;
@@ -29,8 +30,11 @@ public class AppTranslator : MonoBehaviour
     public Image LangaugeIconB;
     public Text TranscriptA;
     public Text TranscriptB;
+    public Text CreditsValue;
+    public TextTypingEffect WaitingIndicator;
     public LangaugeSelectionPanel langSelPanel;
     public IAPManager IapMgr;
+    public Authentication Auth;
 
     private IServiceProvider sp = null;
     private LanguageManager langMgr = null;
@@ -61,6 +65,7 @@ public class AppTranslator : MonoBehaviour
         {
             sp = bcsp;
             Debug.Log("BrainCLoud init ok");
+            Auth.SignIn();
         }, (status, errorCode) =>
         {
             Debug.LogError("BrainCloud init failed: " + status + ":" + errorCode);
@@ -76,6 +81,7 @@ public class AppTranslator : MonoBehaviour
 
     void onError(string error)
     {
+        WaitingIndicator.Stop();
         Debug.LogError(error);
     }
 
@@ -131,6 +137,26 @@ public class AppTranslator : MonoBehaviour
 
     public void Speech2SpeechTranslation(LanguageCode srcLang, LanguageCode dstLang, byte[] srcAudioData, int sampleRate, Action<string> onSrcText, Action<string> onDstText, Action<byte[]> onResponse, Action<string> onError)
     {
+        if (sp.GetAccountService().Me == null)
+        {
+            Auth.SignIn();
+
+            sp.GetTranslationService("chatgpt").Translate("Please login first.",
+                LanguageCode.en, srcLang, (dstText) => onSrcText?.Invoke(dstText), onError);
+
+            return;
+        }
+
+        if (sp.GetAccountService().Me.Info.Credits <= 0)
+        {
+            sp.GetTranslationService("chatgpt").Translate("No more credist. Please recharge first.",
+                LanguageCode.en, srcLang, (dstText) => onSrcText?.Invoke(dstText), onError);
+
+            return;
+        }
+
+        WaitingIndicator.StartAni();
+
         sp.GetSpeech2TextService(srcLang).Speech2Text(srcAudioData, sampleRate, 1, (srcText, _, confidence) =>
         {
             srcText = srcText.Trim("\r\n ".ToCharArray());
@@ -139,6 +165,8 @@ public class AppTranslator : MonoBehaviour
             {
                 onDstText?.Invoke(dstText);
                 sp.GetText2SpeechService(dstLang, sampleRate).Text2Speech(dstText, sampleRate, onResponse, onError);
+                
+                WaitingIndicator.Stop();
             }, onError);
         }, onError);
     }
@@ -174,6 +202,49 @@ public class AppTranslator : MonoBehaviour
 
     public void OnIapButton()
     {
+        var accService = sp.GetAccountService();
+        if (!accService.Signed)
+            return;
+
         IapMgr.ShowPurchaseView();
+    }
+
+    public void OnIapSuccess(Product product)
+    {
+        Debug.Log("purchase success: " + product.transactionID);
+        var credits = IapMgr.ProductId2Credits(product.definition.id);
+
+        var accService = sp.GetAccountService();
+        var acc = accService.Me;
+        acc.Info.Credits += credits;
+        accService.UpdateAccountInfo(acc, (acc) =>
+        {
+            Debug.Log("updated ok");
+            CreditsValue.text = acc.Info.Credits.ToString();
+            IapMgr.Hide();
+        }, (error) =>
+        {
+            Debug.Log("updated failed: " + error);
+        });
+    }
+
+    public void OnIapFailed(PurchaseFailureReason reason)
+    {
+        Debug.Log("purchase failed: " + reason);
+    }
+
+    public void OnSignIn(string playerId)
+    {
+        sp.GetAccountService().CreateOrSign(playerId, Application.platform.ToString(), acc =>
+        {
+            Debug.Log("login: " + acc.ID);
+            Auth.Hide();
+
+            CreditsValue.text = acc.Info.Credits.ToString();
+        }, error =>
+        {
+            Debug.LogError(error);
+            Auth.SignIn();
+        });
     }
 }

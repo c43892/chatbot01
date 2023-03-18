@@ -12,6 +12,8 @@ Client/[Mm]emoryCaptures/
 Data
 Tools/*/[Bb]in/
 Tools/*/[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
 
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 !Client/[Aa]ssets/**/*.meta

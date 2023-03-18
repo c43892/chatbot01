@@ -22,12 +22,20 @@ public class LangaugeSelectionPanel : MonoBehaviour
 
     public LanguageIconPair[] AllLanguageIcons;
 
-    Dictionary<LanguageCode, Sprite> AllIcons = null;
-
-    private void Awake()
+    Dictionary<LanguageCode, Sprite> AllIcons
     {
-        PrepareIcons();
-    }
+        get
+        {
+            if (allIcons == null)
+            {
+                allIcons = new Dictionary<LanguageCode, Sprite>();
+                foreach (var pair in AllLanguageIcons)
+                    allIcons.Add(pair.Language, pair.Icon);
+            }
+
+            return allIcons;
+        }
+    } Dictionary<LanguageCode, Sprite> allIcons = null;
 
     public void OpenSelection(IEnumerable<LanguageCode> allSupported, LanguageCode defaultLang, Action<LanguageCode, Sprite> onSelected)
     {
@@ -60,16 +68,6 @@ public class LangaugeSelectionPanel : MonoBehaviour
     public Sprite GetSprite(LanguageCode lang)
     {
         return AllIcons[lang];
-    }
-
-    void PrepareIcons()
-    {
-        if (AllIcons != null)
-            return;
-
-        AllIcons = new Dictionary<LanguageCode, Sprite>();
-        foreach (var pair in AllLanguageIcons)
-            AllIcons.Add(pair.Language, pair.Icon);
     }
 
     public void CancelSelection()

@@ -1,0 +1,34 @@
+var httpClientService = bridge.getHttpClientServiceProxy();
+
+var text2SpeechResponse = httpClientService.postJsonResponseJson("google_text2speech", "", {
+    "Content-Type": "application/json"
+}, {
+    "input": {
+        "text": data.text,
+    },
+    "voice": {
+        "languageCode": data.languageCode,
+        "name": data.languageModel,
+        "ssmlGender": "FEMALE"
+    },
+    "audioConfig": {
+        "audioEncoding": "LINEAR16", 
+        "sampleRateHertz": data.sampleRateHertz
+    }
+});
+
+var response = text2SpeechResponse.data;
+var ret;
+if (response.statusCode == 200) {
+    ret = {
+        "status": "success",
+        "audio": text2SpeechResponse.data.json.audioContent
+    };
+} else {
+    ret = {
+        "status": "failed",
+        "statusMessage": response.error
+    };
+}
+
+ret;

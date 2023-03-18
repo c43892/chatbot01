@@ -8,7 +8,11 @@ namespace Assets.Scripts.Services
 {
     public interface IAccountService
     {
-        void CreateNewAccount(string linkID, string platform, Action<Account> onResponse, Action<string> onError);
+        Account Me { get; }
+
+        bool Signed { get; }
+
+        void CreateOrSign(string linkID, string platform, Action<Account> onResponse, Action<string> onError);
 
         void UpdateAccountInfo(Account acc, Action<Account> onResponse, Action<string> onError);
     }
