@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace Assets.Scripts.Languages
 {
-    public class LanguageDetector
+    public static class LanguageDetector
     {
-        public string DetectLanguage(string text)
+        public static LanguageCode DetectLanguage(string text)
         {
             if (IsSimplifiedChinese(text))
-                return "cn";
+                return LanguageCode.cn;
             else if (IsFrench(text))
-                return "fr";
+                return LanguageCode.fr;
             else
-                return "en";
+                return LanguageCode.en;
         }
 
         public static bool IsSimplifiedChinese(string str)

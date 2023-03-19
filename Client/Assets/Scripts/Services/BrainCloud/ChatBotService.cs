@@ -17,7 +17,25 @@ namespace Assets.Scripts.Services.BrainCloud
             maxPayload = payload;
         }
 
-        public void Ask(string question, Action<string> onResponse, Action<string> onError)
+        public void Chat(IEnumerable<KeyValuePair<string, string>> messages, Action<string> onResponse, Action<string> onError)
+        {
+            var jsonMessages = @"{""role"":""system"", ""content"":""you're a helpful assistant.""},";
+            foreach (var kv in messages)
+                jsonMessages += @"{""role"":""" + kv.Key + @""", ""content"":""" + kv.Value + @"""},";
+
+            jsonMessages = jsonMessages.Substring(0, jsonMessages.Length - 1) + "]";
+
+            var jsonArgs = @"{ ""messages"":[" + jsonMessages + @"}";
+            RunScript("chatgpt_chat", jsonArgs, (response) =>
+            {
+                if (response["status"] == "succeed")
+                    onResponse?.Invoke(response["answer"]);
+                else
+                    onError?.Invoke(response["statusMessage"]);
+            }, onError);
+        }
+
+        public void Completion(string question, Action<string> onResponse, Action<string> onError)
         {
             var jsonArgs = @"{
 ""prompt"":""" + question + @""",

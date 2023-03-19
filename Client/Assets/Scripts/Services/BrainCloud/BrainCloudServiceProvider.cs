@@ -10,7 +10,32 @@ namespace Assets.Scripts.Services.BrainCloud
         readonly Dictionary<string, IText2SpeechService> text2SpeechServices = new Dictionary<string, IText2SpeechService>();
         readonly Dictionary<string, ISpeech2TextService> speech2TextServices = new Dictionary<string, ISpeech2TextService>();
         readonly Dictionary<string, IChatBotService> chatBotServices = new Dictionary<string, IChatBotService>();
+        readonly Dictionary<string, ITransationService> translationServices = new Dictionary<string, ITransationService>();
+        IAccountService accountService = null; 
 
+        string LanguageCode2Name(LanguageCode code)
+        {
+            switch (code)
+            {
+                case LanguageCode.cn: return "cmn_CN";
+                case LanguageCode.en: return "en-US";
+                case LanguageCode.fr: return "fr-FR";
+                case LanguageCode.ja: return "ja-JP";
+                default: throw new Exception(code + " is not supported yet");
+            }
+        }
+
+        string LanguageCode2ModelName(LanguageCode code)
+        {
+            switch (code)
+            {
+                case LanguageCode.cn: return "cmn-CN-Standard-D";
+                case LanguageCode.en: return "en-US-Neural2-G";
+                case LanguageCode.fr: return "fr-FR-Neural2-A";
+                case LanguageCode.ja: return "ja-JP-Neural2-B";
+                default: throw new Exception(code + " is not supported yet");
+            }
+        }
         public void Init(BrainCloudWrapper wrapper, Action onResponse, Action<int, int> onError)
         {
             bcw = wrapper;
@@ -27,21 +52,24 @@ namespace Assets.Scripts.Services.BrainCloud
             });
         }
 
-        public IText2SpeechService GetText2SpeechService(string languageCode, string languageModel, int sampleRate)
+        public IText2SpeechService GetText2SpeechService(LanguageCode lang, int sampleRate)
         {
-            var key = languageCode + ":" + languageModel;
+            var langName = LanguageCode2Name(lang);
+            var langModel = LanguageCode2ModelName(lang);
+            var key = langName + ":" + langModel;
             if (!text2SpeechServices.ContainsKey(key))
-                text2SpeechServices[key] = new Text2SpeechService(bcw, languageCode, languageModel, sampleRate);
+                text2SpeechServices[key] = new Text2SpeechService(bcw, langName, langModel);
 
             return text2SpeechServices[key];
         }
 
-        public ISpeech2TextService GetSpeech2TextService(string languageCode)
+        public ISpeech2TextService GetSpeech2TextService(LanguageCode lang)
         {
-            if (!speech2TextServices.ContainsKey(languageCode))
-                speech2TextServices[languageCode] = new Speech2TextService(bcw, languageCode);
+            var langName = LanguageCode2Name(lang);
+            if (!speech2TextServices.ContainsKey(langName))
+                speech2TextServices[langName] = new Speech2TextService(bcw, langName);
 
-            return speech2TextServices[languageCode];
+            return speech2TextServices[langName];
         }
 
         public IChatBotService GetChatBotService(int maxPayload)
@@ -51,5 +79,28 @@ namespace Assets.Scripts.Services.BrainCloud
 
             return chatBotServices[maxPayload.ToString()];
         }
+
+        public ITransationService GetTranslationService(string type)
+        {
+            Dictionary<string, Func<ITransationService>> creators = new()
+            {
+                { "chatgpt", () => new ChatGPTTranslationService(bcw) },
+                { "deepl", () => null },
+            };
+
+            if (!translationServices.ContainsKey(type))
+                translationServices[type] = creators[type]();
+
+            return translationServices[type];
+        }
+
+        public IAccountService GetAccountService()
+        {
+            if (accountService == null)
+                accountService = new AccountService(bcw);
+
+            return accountService;
+        }
+
     }
 }

@@ -1,0 +1,60 @@
+var httpClientService = bridge.getHttpClientServiceProxy();
+
+// google speech to text
+var speech2textResponse = httpClientService.postJsonResponseJson("google_speech2text", "", {
+    "Content-Type": "application/json"
+}, {
+    "config": {
+        "encoding": "LINEAR16", 
+        "languageCode": data.languageCode,
+        "enableAutomaticPunctuation": true,
+        "audioChannelCount": data.audioChannelCount,
+        "sampleRateHertz": data.sampleRate
+    },
+    "audio": {
+        "content": data.audioData
+    }
+});
+
+var prompt = speech2textResponse.data.json.results[0].alternatives[0].transcript;
+
+// chatgpt completion
+var chatgptResponse = httpClientService.postJsonResponseJson("chatgpt", "", {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <OPENAI_API_TOKEN>"
+}, {
+    "prompt": prompt,
+    "model": "text-davinci-003",
+    "temperature": 0.2,
+    "max_tokens": data.max_tokens
+});
+
+var answer = chatgptResponse.data.json.choices[0].text;
+
+
+// google text to speech
+var text2SpeechResponse = httpClientService.postJsonResponseJson("google_text2speech", "", {
+    "Content-Type": "application/json"
+}, {
+    "input": {
+        "text": answer,
+    },
+    "voice": {
+        "languageCode": data.languageCode,
+        "name": data.languageModel,
+        "ssmlGender": "FEMALE"
+    },
+    "audioConfig": {
+        "audioEncoding": "LINEAR16", 
+        "sampleRateHertz": data.sampleRate
+    }
+});
+
+var response = {
+    "prompt": prompt,
+    "answer": answer,
+    "audio": text2SpeechResponse.data.json.audioContent
+};
+
+response
+

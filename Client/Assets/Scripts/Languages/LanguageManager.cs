@@ -6,29 +6,21 @@ using System.Threading.Tasks;
 
 namespace Assets.Scripts.Languages
 {
+    public enum LanguageCode
+    {
+        en,
+        cn,
+        fr,
+        ja,
+    }
+
     public class LanguageManager
     {
-        readonly Dictionary<string, LanguageInfo> languages;
-        public string DefaultLangauge { get; private set; }
+        public LanguageCode[] Languages { get; private set; }
 
-        public LanguageManager(string defaultLang, Dictionary<string, LanguageInfo> langs)
+        public LanguageManager(IEnumerable<LanguageCode> allSupported)
         {
-            languages = langs;
-            DefaultLangauge = defaultLang;
-        }
-
-        public LanguageInfo DefaultLanguageInfo {
-            get => languages[DefaultLangauge];
-        }
-
-        public LanguageInfo this[string langCode]
-        {
-            get => languages[langCode];
-        }
-
-        public IEnumerable<string> AllLanguages
-        {
-            get => languages.Keys;
+            Languages = allSupported.ToArray();
         }
     }
 }

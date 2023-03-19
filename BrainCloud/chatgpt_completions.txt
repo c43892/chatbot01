@@ -1,0 +1,22 @@
+var apiKey = <OPENAI_API_TOKEN>;
+var messages = data.messages;
+
+var httpClientService = bridge.getHttpClientServiceProxy();
+
+var body = {
+    "messages":messages,
+    "model":"gpt-3.5-turbo"
+};
+
+var headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + apiKey
+};
+
+var result = httpClientService.postJsonResponseJson("chatgpt_chat", "", headers, body);
+var ret = {
+    "status": "succeed",
+    "answer": result.data.json.choices[0].message.content
+};chatgpt_completions
+
+ret;

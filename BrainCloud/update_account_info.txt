@@ -1,0 +1,35 @@
+"use strict";
+
+
+function main() {
+    var ret = {
+        status: "failed"
+    };
+        
+    var globalEntityProxy = bridge.getGlobalEntityServiceProxy();
+    var searchResults = globalEntityProxy.getListByIndexedId(data.linkId, 1);
+    if (searchResults.data.entityList.length > 0) {
+        
+        // account exists
+        var entity = searchResults.data.entityList[0];
+        var acc = entity.data;
+        var accInfo = Object.assign({}, acc.info, data.info);
+        acc.info = accInfo;
+
+        var postResult = globalEntityProxy.updateEntity(entity.entityId, entity.version, acc);
+        if (postResult.status == 200) {
+            ret.status = "succeed";
+            ret.account = JSON.stringify(acc);
+        } else {
+            ret.status = "failed";
+        }
+    } else {
+        
+        // account doesn't exist
+        ret.status = "failed";
+    }
+    
+    return ret;
+}
+
+main();
