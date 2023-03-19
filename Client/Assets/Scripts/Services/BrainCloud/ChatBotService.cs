@@ -19,7 +19,7 @@ namespace Assets.Scripts.Services.BrainCloud
 
         public void Chat(IEnumerable<KeyValuePair<string, string>> messages, Action<string> onResponse, Action<string> onError)
         {
-            var jsonMessages = @"{""role"":""system"", ""content"":""you're a helpful assistant.""},";
+            var jsonMessages = @"{""role"":""system"", ""content"":""请扮演一个会撒娇粘人性格活泼的年轻女性，但只回复对话内容，不要回复任何描述文字""},";
             foreach (var kv in messages)
                 jsonMessages += @"{""role"":""" + kv.Key + @""", ""content"":""" + kv.Value + @"""},";
 

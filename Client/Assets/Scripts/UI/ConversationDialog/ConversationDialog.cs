@@ -15,6 +15,7 @@ public interface IConversationDialog
 
     public enum Peer
     {
+        system,
         user,
         assistant,
         error,

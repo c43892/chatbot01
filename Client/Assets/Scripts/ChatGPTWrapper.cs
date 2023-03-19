@@ -23,13 +23,6 @@ public class ChatGPTWrapper : MonoBehaviour
 
     public void Start()
     {
-        //langMgr = new LanguageManager("cn", new()
-        //{
-        //    { "cn", new() { Code = "cmn_CN", Model = "cmn-CN-Standard-D" } },
-        //    { "en", new() { Code = "en-US", Model = "en-US-Neural2-G" } },
-        //    { "fr", new() { Code = "fr-FR", Model = "fr-FR-Neural2-A" } }
-        //});
-
         var bcsp = new BrainCloudServiceProvider();
         bcsp.Init(gameObject.AddComponent<BrainCloudWrapper>(), () =>
         {
@@ -62,10 +55,11 @@ public class ChatGPTWrapper : MonoBehaviour
             question = question.Trim("\r\n ".ToCharArray());
             ConversationDialog.AddSentence(Peer.user, question);
 
-            sp.GetChatBotService(2048).Chat(ConversationDialog.History((kv) => kv.Key  == Peer.assistant || kv.Key == Peer.user).Select((kv) =>
+            sp.GetChatBotService(2048).Chat(ConversationDialog.History((kv) => kv.Key != Peer.error).Select((kv) =>
             {
                 return kv.Key switch
                 {
+                    Peer.system => new KeyValuePair<string, string>("system", kv.Value),
                     Peer.user => new KeyValuePair<string, string>("user", kv.Value),
                     Peer.assistant => new KeyValuePair<string, string>("assistant", kv.Value),
                     _ => new KeyValuePair<string, string>(null, null), // should never happen
