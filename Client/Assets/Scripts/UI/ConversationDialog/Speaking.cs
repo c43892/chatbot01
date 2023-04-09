@@ -12,9 +12,17 @@ public class Speaking : MonoBehaviour
     public Image IconError;
     public Text Text;
 
+    TextEditor textEditor = null;
     public void OnCopyText()
     {
         Uncopied.gameObject.SetActive(false);
         Copied.gameObject.SetActive(true);
+
+        if (textEditor == null)
+            textEditor = new();
+
+        textEditor.text = Text.text;
+        textEditor.SelectAll();
+        textEditor.Copy();
     }
 }
